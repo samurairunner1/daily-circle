@@ -148,6 +148,25 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
   font-size:12.5px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(27,44,88,.28);z-index:50;white-space:nowrap;
   max-width:90vw;overflow:hidden;text-overflow:ellipsis;
 }
+
+/* year ring */
+.ring-wrap{position:relative;max-width:270px;margin:10px auto 0;width:82%}
+.ring-wrap svg{width:100%;height:auto;display:block}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+.ring-pct{font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:42px;line-height:1;letter-spacing:.02em}
+.ring-pct small{font-size:20px;font-weight:700;margin-left:2px}
+.ring-days{font-size:11px;color:#4A4E58;margin-top:8px;letter-spacing:.08em}
+
+/* milestone celebration */
+.celebrate{position:fixed;inset:0;background:rgba(25,28,34,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;cursor:pointer}
+.celebrate-card{background:#F7F4EE;border-radius:2px;border:1px solid rgba(25,28,34,.2);padding:52px 40px 40px;text-align:center;max-width:340px;width:100%;position:relative}
+.celebrate-card::before{content:"";position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:80px;height:4px;background:#B08A3E}
+.celebrate-kicker{font-size:11px;letter-spacing:.4em;color:#B08A3E;font-weight:700}
+.celebrate-num{font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:88px;color:#28407A;line-height:1.1;margin-top:14px}
+.celebrate-num small{font-size:30px;margin-left:4px}
+.celebrate-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:.08em;margin-top:8px}
+.celebrate-msg{font-size:13px;color:#4A4E58;line-height:2;margin-top:16px}
+.celebrate-close{font-size:10.5px;color:#4A4E58;letter-spacing:.2em;margin-top:24px}
 @media (prefers-reduced-motion: reduce){ .stamp,.tab{transition:none} }
 </style>
 </head>
@@ -197,6 +216,9 @@ let profile = load("circle_profile");
 let logs = load("circle_logs") || {};
 let tab = "today";
 let toastTimer = null;
+let ringAnimated = false;
+
+const MILESTONES = [7, 30, 66, 100, 200, 365];
 
 const webhookUrl = () => SLACK_WEBHOOK;
 
@@ -268,6 +290,162 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.remove(), 3500);
 }
 
+
+/* ---------- month ring (①) ---------- */
+function yearRingHTML(s) {
+  const now = new Date();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let monthDays = 0;
+  for (let i = 1; i <= dim; i++) {
+    const k = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    if (logs[k] && (logs[k].done || []).length > 0) monthDays++;
+  }
+  const progress = Math.min(1, monthDays / dim);
+  const R = 120, C = 2 * Math.PI * R;
+  const shownOff = ringAnimated ? C * (1 - progress) : C;
+  const ang = -Math.PI / 2 + (ringAnimated ? progress : 0) * 2 * Math.PI;
+  const hx = (150 + Math.cos(ang) * R).toFixed(1), hy = (150 + Math.sin(ang) * R).toFixed(1);
+  let ticks = "";
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * 2 * Math.PI - Math.PI / 2;
+    const gold = (i === 0 && progress >= 1) || (i > 0 && progress >= i / 4);
+    const x1 = (150 + Math.cos(a) * (R - 11)).toFixed(1), y1 = (150 + Math.sin(a) * (R - 11)).toFixed(1);
+    const x2 = (150 + Math.cos(a) * (R + 13)).toFixed(1), y2 = (150 + Math.sin(a) * (R + 13)).toFixed(1);
+    ticks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' +
+      (gold ? "#B08A3E" : "rgba(40,64,122,.28)") + '" stroke-width="' + (gold ? 3.5 : 1.5) + '"/>';
+  }
+  return '<div class="ring-wrap" id="year-ring" data-progress="' + progress + '">' +
+    '<svg viewBox="0 0 300 300" aria-label="一年の進捗リング">' +
+    '<circle cx="150" cy="150" r="' + R + '" fill="none" stroke="rgba(40,64,122,.13)" stroke-width="6"/>' +
+    ticks +
+    '<circle id="yr-arc" cx="150" cy="150" r="' + R + '" fill="none" stroke="#28407A" stroke-width="8" stroke-linecap="round" transform="rotate(-90 150 150)" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + shownOff.toFixed(1) + '"/>' +
+    '<circle id="yr-head" cx="' + hx + '" cy="' + hy + '" r="9" fill="#28407A"/>' +
+    '</svg>' +
+    '<div class="ring-center"><div class="ring-pct">' + (progress * 100).toFixed(1) + '<small>%</small></div>' +
+    '<div class="ring-days">' + (now.getMonth() + 1) + '月 ' + monthDays + '／' + dim + '日を記録</div></div></div>';
+}
+
+function animateYearRing() {
+  const wrap = $("#year-ring");
+  if (!wrap || ringAnimated) return;
+  ringAnimated = true;
+  const progress = parseFloat(wrap.dataset.progress) || 0;
+  const arc = $("#yr-arc"), head = $("#yr-head");
+  const R = 120, C = 2 * Math.PI * R;
+  const setAt = (p) => {
+    arc.style.strokeDashoffset = C * (1 - p);
+    const a = -Math.PI / 2 + p * 2 * Math.PI;
+    head.setAttribute("cx", 150 + Math.cos(a) * R);
+    head.setAttribute("cy", 150 + Math.sin(a) * R);
+  };
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAt(progress); return; }
+  const t0 = performance.now(), dur = 1600;
+  function frame(t) {
+    const p = Math.min((t - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    setAt(progress * e);
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- milestone celebration (⑤) ---------- */
+function showCelebration(m) {
+  const el = document.createElement("div");
+  el.className = "celebrate";
+  el.innerHTML = '<div class="celebrate-card">' +
+    '<div class="celebrate-kicker">MILESTONE</div>' +
+    '<div class="celebrate-num">' + m + '<small>日</small></div>' +
+    '<div class="celebrate-label">投稿 ' + m + '日連続を達成</div>' +
+    '<p class="celebrate-msg">静かに、確かに、積み重なっています。<br>この調子で。</p>' +
+    '<p class="celebrate-close">タップして閉じる</p></div>';
+  el.onclick = () => el.remove();
+  document.body.appendChild(el);
+}
+
+/* ---------- monthly record card (⑥) ---------- */
+async function generateCard() {
+  try { await document.fonts.ready; } catch (e) {}
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth();
+  const dim = new Date(y, mo + 1, 0).getDate();
+  const nHabits = profile.habits.length || 1;
+
+  let recDays = 0, fullDays = 0, best = 0, run = 0;
+  const days = [];
+  for (let i = 1; i <= dim; i++) {
+    const k = y + "-" + String(mo + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    const v = logs[k];
+    const ratio = v ? (v.done || []).length / nHabits : 0;
+    const future = dateFromKey(k) > now;
+    days.push({ ratio, future });
+    if (!future) {
+      if (ratio > 0) { recDays++; run++; best = Math.max(best, run); if (ratio >= 1) fullDays++; }
+      else run = 0;
+    }
+  }
+
+  const W = 1080, H = 1080;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const x = cv.getContext("2d");
+  const mincho = "'Shippori Mincho B1', serif";
+  const gothic = "'Zen Kaku Gothic New', sans-serif";
+
+  x.fillStyle = "#F7F4EE"; x.fillRect(0, 0, W, H);
+
+  // logo ring + wordmark
+  x.strokeStyle = "#28407A"; x.lineWidth = 7; x.lineCap = "round";
+  x.beginPath(); x.arc(124, 118, 34, -Math.PI / 2 + 0.55, -Math.PI / 2 + 2 * Math.PI - 0.25); x.stroke();
+  x.fillStyle = "#28407A"; x.beginPath(); x.arc(124, 84, 8, 0, 2 * Math.PI); x.fill();
+  x.fillStyle = "#191C22"; x.textBaseline = "middle";
+  x.font = "700 44px " + mincho;
+  x.fillText("Daily Circle", 184, 120);
+
+  x.strokeStyle = "rgba(25,28,34,.16)"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(90, 186); x.lineTo(W - 90, 186); x.stroke();
+
+  // title & name
+  x.fillStyle = "#191C22"; x.font = "800 88px " + mincho;
+  x.fillText(y + "年" + (mo + 1) + "月の記録", 90, 286);
+  x.fillStyle = "#4A4E58"; x.font = "500 40px " + gothic;
+  x.fillText(profile.name, 90, 372);
+  x.fillStyle = "#28407A"; x.fillRect(90, 418, 88, 6);
+
+  // dot grid (7 columns)
+  const gx = 118, gy = 500, gapX = 140, gapY = 92, r = 28;
+  days.forEach((d, i) => {
+    const cx = gx + (i % 7) * gapX, cy = gy + Math.floor(i / 7) * gapY;
+    x.setLineDash([]);
+    if (d.future) {
+      x.strokeStyle = "rgba(25,28,34,.2)"; x.lineWidth = 3; x.setLineDash([6, 8]);
+      x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.stroke(); x.setLineDash([]);
+    } else if (d.ratio >= 1) {
+      x.fillStyle = "#28407A"; x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.fill();
+    } else if (d.ratio > 0) {
+      x.strokeStyle = "rgba(40,64,122," + (0.4 + d.ratio * 0.5).toFixed(2) + ")"; x.lineWidth = 6;
+      x.beginPath(); x.arc(cx, cy, r - 3, 0, 2 * Math.PI); x.stroke();
+    } else {
+      x.fillStyle = "#EDEAE1"; x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.fill();
+    }
+  });
+
+  // stats
+  x.fillStyle = "#191C22"; x.font = "700 38px " + mincho;
+  x.fillText("記録 " + recDays + "日　　すべて達成 " + fullDays + "日　　最長 " + best + "日連続", 90, 962);
+
+  // footer
+  x.fillStyle = "#B08A3E"; x.font = "600 24px " + mincho;
+  try { x.letterSpacing = "8px"; } catch (e) {}
+  x.fillText("DAILY CIRCLE — " + y, 90, 1022);
+  try { x.letterSpacing = "0px"; } catch (e) {}
+
+  const a = document.createElement("a");
+  a.download = "daily-circle-" + y + "-" + String(mo + 1).padStart(2, "0") + ".png";
+  a.href = cv.toDataURL("image/png");
+  a.click();
+  showToast("記録カードを保存しました");
+}
+
 /* ---------- actions ---------- */
 function toggleHabit(habitId) {
   const key = todayKey();
@@ -292,15 +470,20 @@ function postToday() {
     return ":white_large_square: " + h.name;
   }).join("\n");
   const isUpdate = !!day.posted;
+  const celebrated = profile.celebrated || [];
+  const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
   const msg = ":large_blue_circle: 【Daily Circle】" + profile.name + " さんの今日の記録" +
     (isUpdate ? "（更新）" : "") + "\n" + lines +
-    "\n:fire: 投稿" + s.streak + "日連続中";
+    "\n:fire: 投稿" + s.streak + "日連続中" +
+    (milestone ? "\n:tada: :confetti_ball: 祝・投稿" + milestone + "日連続を達成！ :confetti_ball: :tada:" : "");
   sendSlack(msg).then((ok) => {
     if (ok) {
       day.posted = true;
       logs[key] = day;
+      if (milestone) profile.celebrated = [...celebrated, milestone];
       persist();
       render();
+      if (milestone) showCelebration(milestone);
       showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
     } else {
       showToast("投稿に失敗しました。通信環境を確認してください");
@@ -352,6 +535,7 @@ function todayView() {
   const allDone = day.done.length === profile.habits.length;
   let html = '<main class="body">' +
     '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
+    yearRingHTML(computeStats()) +
     '<div class="goals-box">' + profile.goals.map((g) => '<p class="goal-line">' + esc(g) + '</p>').join("") + '</div>' +
     '<section class="card"><h2 class="card-title">今日の習慣</h2>';
   profile.habits.forEach((h) => {
@@ -425,7 +609,12 @@ function recordView(stats) {
     '</section>' +
     '<section class="card"><h2 class="card-title">習慣ごとの歩み</h2>' +
     '<p class="card-sub">直近28日の記録です。どの習慣が続いているかを個別に確認できます。</p>' +
-    habitRows + '</section></main>';
+    habitRows + '</section>' +
+    '<section class="card"><h2 class="card-title">今月の記録カード</h2>' +
+    '<p class="card-sub">この月のドットと成績を1枚の画像（1080×1080）にまとめます。Slackやインスタでの共有用に。</p>' +
+    '<button class="btn-primary" id="dl-card">' + (new Date().getMonth() + 1) + '月の記録カードを保存する</button>' +
+    '<p class="note">スマホで保存されない場合は、開いた画像を長押しして「写真に保存」してください。</p>' +
+    '</section></main>';
 }
 
 function settingsView() {
@@ -508,6 +697,9 @@ function bindApp() {
   document.querySelectorAll(".action-row").forEach((b) => (b.onclick = () => toggleHabit(b.dataset.habit)));
   const post = $("#post-today");
   if (post) post.onclick = postToday;
+  if ($("#year-ring")) animateYearRing();
+  const dl = $("#dl-card");
+  if (dl) dl.onclick = generateCard;
 
   const addGoal = $("#st-add-goal");
   if (addGoal) addGoal.onclick = () => {
