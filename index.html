@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Daily Circle — 日々の記録帳</title>
+<meta name="description" content="Daily Circle — Circleの一年目標を、毎日の習慣でつなぐ記録帳。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;background:#F7F4EE;color:#191C22;
+  font-family:'Zen Kaku Gothic New',-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:520px;margin:0 auto;padding-bottom:96px;min-height:100vh}
+.center-msg{padding:80px 20px;text-align:center;color:#4A4E58;letter-spacing:.12em}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}
+.brand{display:flex;gap:11px;align-items:center}
+.brand-mark{width:34px;height:34px;flex-shrink:0;display:block}
+.brand-mark svg{width:100%;height:100%;display:block}
+.brand-name{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:18px;letter-spacing:.14em}
+.brand-sub{font-size:11px;color:#4A4E58;margin-top:1px;letter-spacing:.05em}
+.streak-pill{background:#191C22;color:#F7F4EE;border-radius:999px;padding:7px 15px;display:flex;align-items:baseline;gap:4px}
+.streak-num{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:18px;color:#AEC0E8;line-height:1}
+.streak-label{font-size:10px;opacity:.72;letter-spacing:.1em}
+
+/* body */
+.body{padding:12px 20px 24px;display:flex;flex-direction:column;gap:18px}
+.date-row{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.date-big{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:30px;letter-spacing:.08em}
+.date-wd{color:#4A4E58;font-size:13px;letter-spacing:.1em}
+.goals-box{display:flex;flex-direction:column;gap:8px}
+.goal-line{font-size:13px;color:#4A4E58;border-left:2px solid #28407A;padding-left:10px;line-height:1.9}
+
+.card{background:#fff;border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:26px 22px 22px;position:relative}
+.card::before{content:"";position:absolute;top:-1px;left:22px;width:44px;height:3px;background:#28407A}
+.card.danger::before{background:#4A4E58}
+.card-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16.5px;letter-spacing:.08em;margin-bottom:8px}
+.card-sub{font-size:12.5px;color:#4A4E58;margin-bottom:12px;line-height:1.9}
+
+/* habits */
+.action-row{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:transparent;border:none;border-bottom:1px solid rgba(25,28,34,.1);
+  padding:12px 2px;cursor:pointer;font-family:inherit;color:inherit;font-size:15px;
+}
+.action-row:last-of-type{border-bottom:none}
+.stamp{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  border:1.5px solid rgba(40,64,122,.35);display:flex;align-items:center;justify-content:center;
+  font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;color:transparent;
+  transition:all .25s cubic-bezier(.22,1,.36,1);
+}
+.stamp.pressed{border-color:#28407A;color:#F7F4EE;background:#28407A;box-shadow:0 4px 12px rgba(27,44,88,.24)}
+.action-row.done .action-name{color:#4A4E58}
+.action-name{font-weight:500;letter-spacing:.02em}
+.all-done{margin-top:12px;font-family:'Shippori Mincho B1',serif;color:#28407A;font-size:13.5px;text-align:center;letter-spacing:.08em}
+
+/* fields & buttons */
+.fld{
+  width:100%;border:1px solid rgba(25,28,34,.18);background:#fff;border-radius:2px;
+  padding:12px 13px;font-size:15px;font-family:inherit;color:#191C22;margin-bottom:10px;
+}
+.fld:focus{outline:2px solid #28407A;outline-offset:1px;border-color:transparent}
+textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
+.fld-label{display:block;font-size:12px;font-weight:700;color:#4A4E58;margin-bottom:6px;letter-spacing:.08em;margin-top:6px}
+.btn-primary{
+  width:100%;background:#28407A;color:#F7F4EE;border:none;border-radius:999px;
+  padding:14px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.14em;transition:background .3s;
+}
+.btn-primary:hover{background:#1B2C58}
+.btn-primary:disabled{opacity:.4;cursor:default}
+.btn-ghost{
+  background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:10px;
+  font-family:inherit;font-size:13px;color:#4A4E58;cursor:pointer;width:100%;margin-bottom:10px;letter-spacing:.06em;
+}
+.btn-danger{width:100%;background:#7A2828;color:#fff;border:none;border-radius:999px;padding:12px;font-family:inherit;font-weight:700;cursor:pointer;letter-spacing:.1em}
+.note{font-size:11.5px;color:#4A4E58;margin-top:10px;line-height:1.9}
+
+/* stats */
+.stat-band{display:flex;gap:1px;border-radius:2px;overflow:hidden}
+.stat{flex:1;background:#191C22;color:#F7F4EE;padding:16px 8px 13px;text-align:center}
+.stat-val{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:21px;color:#AEC0E8;line-height:1.2}
+.stat-label{font-size:10px;opacity:.66;margin-top:4px;letter-spacing:.14em}
+
+/* year grid */
+.year-grid{display:flex;flex-direction:column;gap:5px}
+.month-row{display:flex;align-items:center;gap:8px}
+.month-label{width:32px;font-size:10px;color:#4A4E58;font-family:'Shippori Mincho B1',serif;flex-shrink:0;text-align:right;letter-spacing:.04em}
+.day-cells{display:flex;gap:2px;flex-wrap:wrap}
+.cell{width:8px;height:8px;border-radius:50%;display:inline-block}
+.glegend{display:flex;gap:16px;font-size:11px;color:#4A4E58;margin-top:14px;justify-content:center;letter-spacing:.06em;flex-wrap:wrap}
+.gd{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+.gd-full{background:#28407A}
+.gd-part{background:transparent;border:1.5px solid #28407A}
+.gd-none{background:#EDEAE1}
+
+/* habit rows */
+.habit-row{padding:12px 0;border-bottom:1px solid rgba(25,28,34,.08)}
+.habit-row:last-child{border-bottom:none}
+.habit-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.habit-name{font-size:14px;font-weight:700;letter-spacing:.02em}
+.habit-meta{font-size:11px;color:#4A4E58;white-space:nowrap}
+.habit-meta em{font-style:normal;color:#B08A3E;font-weight:700}
+.habit-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:8px}
+.hd{width:9px;height:9px;border-radius:50%;background:#EDEAE1;display:inline-block}
+.hd.on{background:#28407A}
+
+/* onboarding */
+.onb{padding:52px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.onb-mark{width:56px;height:56px;margin-bottom:18px}
+.onb-mark svg{width:100%;height:100%;display:block}
+.onb-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:23px;letter-spacing:.16em;margin-bottom:6px}
+.onb-tate{font-size:11px;letter-spacing:.4em;color:#28407A;font-weight:500;margin-bottom:16px}
+.onb-lead{font-size:13px;color:#4A4E58;line-height:2.1;max-width:340px;margin-bottom:26px}
+.onb-card{
+  width:100%;max-width:360px;text-align:left;background:#fff;
+  border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:24px 20px;position:relative;
+}
+.onb-card::before{content:"";position:absolute;top:-1px;left:20px;width:44px;height:3px;background:#28407A}
+
+/* tabs */
+.tabs{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:520px;display:flex;background:rgba(247,244,238,.96);
+  backdrop-filter:blur(4px);
+  border-top:1px solid rgba(25,28,34,.14);padding:6px 8px calc(8px + env(safe-area-inset-bottom));z-index:40;
+}
+.tab{
+  flex:1;background:transparent;border:none;font-family:'Shippori Mincho B1',serif;
+  font-weight:700;font-size:14px;letter-spacing:.2em;color:#4A4E58;padding:13px 4px;cursor:pointer;
+  position:relative;transition:color .3s;
+}
+.tab.on{color:#28407A}
+.tab.on::after{
+  content:"";position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;background:#28407A;
+}
+.toast{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+  background:#1B2C58;color:#F7F4EE;padding:10px 20px;border-radius:999px;
+  font-size:12.5px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(27,44,88,.28);z-index:50;white-space:nowrap;
+  max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+}
+@media (prefers-reduced-motion: reduce){ .stamp,.tab{transition:none} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   ★ 管理者設定（清水さんがデプロイ前にここだけ編集）
+   SlackのIncoming Webhook URLを「base64に変換して」貼り付けます。
+   （公開リポジトリではURLを直接書くとSlack側で自動無効化されるため）
+
+   変換方法：ブラウザで F12 → Console を開き、次を実行してコピー
+     btoa("https://hooks.slack.com/services/T000/B000/XXXX")
+
+   例: const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20v...";
+========================================================= */
+const SLACK_WEBHOOK_B64 = "";
+
+const SLACK_WEBHOOK = SLACK_WEBHOOK_B64 ? atob(SLACK_WEBHOOK_B64) : "";
+
+/* ---------- helpers ---------- */
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const todayKey = () => keyFromDate(new Date());
+function keyFromDate(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function dateFromKey(k) {
+  const [y, m, d] = k.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+const daysBetween = (a, b) => Math.floor((b - a) / 86400000);
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+function persist() {
+  localStorage.setItem("circle_profile", JSON.stringify(profile));
+  localStorage.setItem("circle_logs", JSON.stringify(logs));
+}
+
+/* ---------- state ---------- */
+let profile = load("circle_profile");
+let logs = load("circle_logs") || {};
+let tab = "today";
+let toastTimer = null;
+
+const webhookUrl = () => SLACK_WEBHOOK;
+
+/* ---------- stats ---------- */
+function computeStats() {
+  const start = dateFromKey(profile.startDate);
+  const now = dateFromKey(todayKey());
+  const elapsed = Math.max(1, daysBetween(start, now) + 1);
+  const nHabits = profile.habits.length || 1;
+  let totalDone = 0, stampedDays = 0;
+  Object.values(logs).forEach((v) => {
+    const done = (v.done || []).length;
+    totalDone += done;
+    if (done > 0) stampedDays++;
+  });
+  let streak = 0;
+  const cur = new Date(now);
+  for (;;) {
+    const key = keyFromDate(cur);
+    if (logs[key] && (logs[key].done || []).length > 0) {
+      streak++; cur.setDate(cur.getDate() - 1);
+    } else {
+      if (key === todayKey()) { cur.setDate(cur.getDate() - 1); continue; }
+      break;
+    }
+  }
+  const rate = Math.round(totalDone / (nHabits * elapsed) * 100);
+  return { elapsed, rate: Math.min(100, rate), streak, stampedDays };
+}
+
+function computeHabitStats(habitId) {
+  const start = dateFromKey(profile.startDate);
+  const now = dateFromKey(todayKey());
+  const elapsed = Math.max(1, daysBetween(start, now) + 1);
+  let doneDays = 0;
+  Object.values(logs).forEach((v) => { if ((v.done || []).includes(habitId)) doneDays++; });
+  let streak = 0;
+  const cur = new Date(now);
+  for (;;) {
+    const key = keyFromDate(cur);
+    if (logs[key] && (logs[key].done || []).includes(habitId)) {
+      streak++; cur.setDate(cur.getDate() - 1);
+    } else {
+      if (key === todayKey()) { cur.setDate(cur.getDate() - 1); continue; }
+      break;
+    }
+  }
+  return { streak, rate: Math.min(100, Math.round(doneDays / elapsed * 100)) };
+}
+
+/* ---------- Slack ---------- */
+function sendSlack(text) {
+  const url = webhookUrl();
+  if (!url) return Promise.resolve(false);
+  // Incoming WebhookはCORSヘッダを返さないため no-cors で送信（結果は不透明）
+  return fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify({ text }) })
+    .then(() => true)
+    .catch(() => false);
+}
+
+function showToast(msg) {
+  const old = $(".toast");
+  if (old) old.remove();
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 3500);
+}
+
+/* ---------- actions ---------- */
+function toggleHabit(habitId) {
+  const key = todayKey();
+  const day = logs[key] || { done: [], notified: [] };
+  const wasDone = day.done.includes(habitId);
+  day.done = wasDone ? day.done.filter((x) => x !== habitId) : [...day.done, habitId];
+  day.notified = day.notified || [];
+  logs[key] = day;
+  persist();
+  render();
+
+  if (!wasDone && webhookUrl() && !day.notified.includes(habitId)) {
+    const habit = profile.habits.find((h) => h.id === habitId);
+    const s = computeStats();
+    const msg = ":large_blue_circle: 【Daily Circle】\n" +
+      profile.name + " さんが「" + (habit ? habit.name : "") + "」を達成しました！\n" +
+      ":fire: 連続 " + s.streak + "日目　:dart: 累計達成率 " + s.rate + "%";
+    day.notified.push(habitId);
+    persist();
+    sendSlack(msg).then((ok) => showToast(ok ? "Slackに通知しました" : "Slack通知に失敗しました"));
+  }
+}
+
+/* ---------- views ---------- */
+const RING = '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="12.5" stroke="#28407A" stroke-width="2.4" stroke-dasharray="66 13" stroke-linecap="round" transform="rotate(-90 16 16)"/><circle cx="16" cy="3.5" r="2.6" fill="#28407A"/></svg>';
+
+function onbView() {
+  return '<div class="onb">' +
+    '<div class="onb-mark">' + RING + '</div>' +
+    '<h1 class="onb-title">Daily Circle</h1>' +
+    '<div class="onb-tate">日々の記録帳</div>' +
+    '<p class="onb-lead">年初に宣言した目標を、日々の習慣でやり切るための記録帳です。今日の一歩を記録し、同期と共有しながら、一年を積み重ねていきます。</p>' +
+    '<div class="onb-card">' +
+      '<label class="fld-label">あなたの名前（Slack通知に表示されます）</label>' +
+      '<input class="fld" id="ob-name" placeholder="例：清水 巧">' +
+      '<label class="fld-label">この一年で達成したい目標（1〜3個）</label>' +
+      '<div id="ob-goals"><textarea class="fld" placeholder="目標 1（例：北海道マラソンでMGC出場権を獲得する）"></textarea></div>' +
+      '<button class="btn-ghost" id="ob-add-goal">＋ 目標を追加</button>' +
+      '<label class="fld-label">毎日の習慣（1〜5個）</label>' +
+      '<p class="note" style="margin-top:0;margin-bottom:10px">目標に向かうために毎日続けたいこと。特定の目標に紐付ける必要はありません。</p>' +
+      '<div id="ob-habits">' +
+        '<input class="fld" placeholder="習慣 1（例：朝ラン10km）">' +
+        '<input class="fld" placeholder="習慣 2">' +
+        '<input class="fld" placeholder="習慣 3">' +
+      '</div>' +
+      '<button class="btn-ghost" id="ob-add-habit">＋ 習慣を追加</button>' +
+      '<button class="btn-primary" id="ob-start">記録帳をひらく</button>' +
+      '<p class="note">※ 習慣を達成すると、サークルのSlackチャンネルにあなたの名前・達成した習慣・連続日数・達成率が通知されます。</p>' +
+    '</div>' +
+  '</div>';
+}
+
+function headerView(stats) {
+  return '<header class="top">' +
+    '<div class="brand"><span class="brand-mark">' + RING + '</span>' +
+    '<div><div class="brand-name">Daily Circle</div><div class="brand-sub">' + esc(profile.name) + ' さんの一年の記録</div></div></div>' +
+    '<div class="streak-pill"><span class="streak-num">' + stats.streak + '</span><span class="streak-label">日連続</span></div>' +
+  '</header>';
+}
+
+function todayView() {
+  const day = logs[todayKey()] || { done: [] };
+  const d = new Date();
+  const wd = ["日","月","火","水","木","金","土"][d.getDay()];
+  const allDone = day.done.length === profile.habits.length;
+  let html = '<main class="body">' +
+    '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
+    '<div class="goals-box">' + profile.goals.map((g) => '<p class="goal-line">' + esc(g) + '</p>').join("") + '</div>' +
+    '<section class="card"><h2 class="card-title">今日の習慣</h2>';
+  profile.habits.forEach((h) => {
+    const done = day.done.includes(h.id);
+    html += '<button class="action-row' + (done ? " done" : "") + '" data-habit="' + h.id + '">' +
+      '<span class="stamp' + (done ? " pressed" : "") + '">' + (done ? "済" : "") + '</span>' +
+      '<span class="action-name">' + esc(h.name) + '</span></button>';
+  });
+  if (allDone) html += '<p class="all-done">本日の習慣、すべて達成。お疲れさまでした。</p>';
+  if (!webhookUrl()) html += '<p class="note">Slack通知は現在オフになっています（管理者側で設定されます）。</p>';
+  html += '</section></main>';
+  return html;
+}
+
+function recordView(stats) {
+  const year = new Date().getFullYear();
+  const nHabits = profile.habits.length || 1;
+  const today = new Date();
+  let grid = "";
+  for (let m = 0; m < 12; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const v = logs[k];
+      const ratio = v ? (v.done || []).length / nHabits : 0;
+      const future = dateFromKey(k) > today;
+      let style;
+      if (future) style = "background:transparent;border:1px dashed rgba(25,28,34,.18)";
+      else if (ratio >= 1) style = "background:#28407A;border:1px solid transparent";
+      else if (ratio > 0) style = "background:transparent;border:1.5px solid rgba(40,64,122," + (0.4 + ratio * 0.5).toFixed(2) + ")";
+      else style = "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+
+  const last28 = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    last28.push(keyFromDate(d));
+  }
+  let habitRows = "";
+  profile.habits.forEach((h) => {
+    const hs = computeHabitStats(h.id);
+    const dots = last28.map((k) =>
+      '<span class="hd' + ((logs[k] && (logs[k].done || []).includes(h.id)) ? " on" : "") + '" title="' + k + '"></span>'
+    ).join("");
+    habitRows += '<div class="habit-row"><div class="habit-head">' +
+      '<span class="habit-name">' + esc(h.name) + '</span>' +
+      '<span class="habit-meta"><em>連続 ' + hs.streak + '日</em>　達成率 ' + hs.rate + '%</span></div>' +
+      '<div class="habit-dots">' + dots + '</div></div>';
+  });
+
+  return '<main class="body">' +
+    '<div class="stat-band">' +
+      '<div class="stat"><div class="stat-val">' + stats.rate + '%</div><div class="stat-label">累計達成率</div></div>' +
+      '<div class="stat"><div class="stat-val">' + stats.streak + '日</div><div class="stat-label">連続日数</div></div>' +
+      '<div class="stat"><div class="stat-val">' + stats.stampedDays + '日</div><div class="stat-label">記録した日</div></div>' +
+    '</div>' +
+    '<section class="card"><h2 class="card-title">' + year + '年の記録</h2>' +
+    '<p class="card-sub">一つの点が一日。すべて達成した日は塗りつぶし、一部達成の日は輪郭のみで表示されます。</p>' +
+    '<div class="year-grid">' + grid + '</div>' +
+    '<div class="glegend"><span><i class="gd gd-full"></i> すべて達成</span><span><i class="gd gd-part"></i> 一部達成</span><span><i class="gd gd-none"></i> 未記録</span></div>' +
+    '</section>' +
+    '<section class="card"><h2 class="card-title">習慣ごとの歩み</h2>' +
+    '<p class="card-sub">直近28日の記録です。どの習慣が続いているかを個別に確認できます。</p>' +
+    habitRows + '</section></main>';
+}
+
+function settingsView() {
+  const goalFields = profile.goals.map((g, i) =>
+    '<textarea class="fld st-goal" placeholder="目標 ' + (i + 1) + '">' + esc(g) + '</textarea>').join("");
+  const habitFields = profile.habits.map((h) =>
+    '<input class="fld st-habit" value="' + esc(h.name) + '">').join("");
+  return '<main class="body">' +
+    '<section class="card"><h2 class="card-title">一年の目標（1〜3個）</h2>' +
+    '<div id="st-goals">' + goalFields + '</div>' +
+    (profile.goals.length < 3 ? '<button class="btn-ghost" id="st-add-goal">＋ 目標を追加</button>' : "") +
+    '<label class="fld-label">毎日の習慣（1〜5個）</label>' +
+    '<div id="st-habits">' + habitFields + '</div>' +
+    (profile.habits.length < 5 ? '<button class="btn-ghost" id="st-add-habit">＋ 習慣を追加</button>' : "") +
+    '<button class="btn-primary" id="st-save">保存する</button>' +
+    '<p class="note">習慣の並び順を変えると過去の記録との対応がずれるため、名称の修正は同じ行で行ってください。記録はこの端末のブラウザに保存されます。</p>' +
+    '</section>' +
+    '<section class="card danger"><h2 class="card-title">記録帳をリセット</h2>' +
+    '<p class="card-sub">目標・習慣・毎日の記録がすべて消えます。元に戻せません。</p>' +
+    '<button class="btn-ghost" id="st-reset">リセットする…</button>' +
+    '</section></main>';
+}
+
+function tabsView() {
+  const items = [["today","今日"],["record","記録"],["settings","設定"]];
+  return '<nav class="tabs">' + items.map(([k, label]) =>
+    '<button class="tab' + (tab === k ? " on" : "") + '" data-tab="' + k + '">' + label + '</button>'
+  ).join("") + '</nav>';
+}
+
+/* ---------- render & bind ---------- */
+function render() {
+  const app = $("#app");
+  if (!profile) { app.innerHTML = onbView(); bindOnb(); return; }
+  const stats = computeStats();
+  let body = "";
+  if (tab === "today") body = todayView();
+  else if (tab === "record") body = recordView(stats);
+  else body = settingsView();
+  app.innerHTML = headerView(stats) + body + tabsView();
+  bindApp();
+}
+
+function bindOnb() {
+  $("#ob-add-goal").onclick = () => {
+    const box = $("#ob-goals");
+    if (box.children.length >= 3) return;
+    const t = document.createElement("textarea");
+    t.className = "fld"; t.placeholder = "目標 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 3) $("#ob-add-goal").style.display = "none";
+  };
+  $("#ob-add-habit").onclick = () => {
+    const box = $("#ob-habits");
+    if (box.children.length >= 5) return;
+    const t = document.createElement("input");
+    t.className = "fld"; t.placeholder = "習慣 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 5) $("#ob-add-habit").style.display = "none";
+  };
+  $("#ob-start").onclick = () => {
+    const name = $("#ob-name").value.trim();
+    const goals = [...$("#ob-goals").children].map((e) => e.value.trim()).filter(Boolean);
+    const habits = [...$("#ob-habits").children].map((e) => e.value.trim()).filter(Boolean);
+    if (!name) { showToast("名前を入力してください"); return; }
+    if (goals.length === 0) { showToast("目標を1つ以上入力してください"); return; }
+    if (habits.length === 0) { showToast("習慣を1つ以上入力してください"); return; }
+    profile = {
+      name, goals,
+      habits: habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n })),
+      startDate: todayKey(),
+    };
+    persist();
+    render();
+  };
+}
+
+function bindApp() {
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
+  document.querySelectorAll(".action-row").forEach((b) => (b.onclick = () => toggleHabit(b.dataset.habit)));
+
+  const addGoal = $("#st-add-goal");
+  if (addGoal) addGoal.onclick = () => {
+    const box = $("#st-goals");
+    if (box.children.length >= 3) return;
+    const t = document.createElement("textarea");
+    t.className = "fld st-goal"; t.placeholder = "目標 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 3) addGoal.style.display = "none";
+  };
+  const addHabit = $("#st-add-habit");
+  if (addHabit) addHabit.onclick = () => {
+    const box = $("#st-habits");
+    if (box.children.length >= 5) return;
+    const t = document.createElement("input");
+    t.className = "fld st-habit";
+    box.appendChild(t);
+    if (box.children.length >= 5) addHabit.style.display = "none";
+  };
+  const save = $("#st-save");
+  if (save) save.onclick = () => {
+    const goals = [...document.querySelectorAll(".st-goal")].map((e) => e.value.trim()).filter(Boolean);
+    const habits = [...document.querySelectorAll(".st-habit")].map((e) => e.value.trim()).filter(Boolean);
+    if (goals.length === 0 || habits.length === 0) { showToast("目標と習慣を1つ以上入力してください"); return; }
+    profile.goals = goals.slice(0, 3);
+    profile.habits = habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n }));
+    persist();
+    showToast("保存しました");
+    render();
+  };
+  const reset = $("#st-reset");
+  if (reset) reset.onclick = () => {
+    if (reset.dataset.armed) {
+      localStorage.removeItem("circle_profile");
+      localStorage.removeItem("circle_logs");
+      profile = null; logs = {}; tab = "today";
+      render();
+    } else {
+      reset.dataset.armed = "1";
+      reset.textContent = "本当にすべて削除する";
+      reset.className = "btn-danger";
+    }
+  };
+}
+
+render();
+</script>
+</body>
+</html>
