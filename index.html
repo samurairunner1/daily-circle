@@ -75,6 +75,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 }
 .btn-primary:hover{background:#1B2C58}
 .btn-primary:disabled{opacity:.4;cursor:default}
+.post-btn{margin-top:16px}
 .btn-ghost{
   background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:10px;
   font-family:inherit;font-size:13px;color:#4A4E58;cursor:pointer;width:100%;margin-bottom:10px;letter-spacing:.06em;
@@ -164,7 +165,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 
    例: const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20v...";
 ========================================================= */
-const SLACK_WEBHOOK_B64 = "";
+const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBCRlhTNEhOOFovRUdDU1Vzc3gzRVJwaWJkcEdJTTM2bU1H";
 
 const SLACK_WEBHOOK = SLACK_WEBHOOK_B64 ? atob(SLACK_WEBHOOK_B64) : "";
 
@@ -270,24 +271,41 @@ function showToast(msg) {
 /* ---------- actions ---------- */
 function toggleHabit(habitId) {
   const key = todayKey();
-  const day = logs[key] || { done: [], notified: [] };
+  const day = logs[key] || { done: [] };
   const wasDone = day.done.includes(habitId);
   day.done = wasDone ? day.done.filter((x) => x !== habitId) : [...day.done, habitId];
-  day.notified = day.notified || [];
   logs[key] = day;
   persist();
   render();
+}
 
-  if (!wasDone && webhookUrl() && !day.notified.includes(habitId)) {
-    const habit = profile.habits.find((h) => h.id === habitId);
-    const s = computeStats();
-    const msg = ":large_blue_circle: 【Daily Circle】\n" +
-      profile.name + " さんが「" + (habit ? habit.name : "") + "」を達成しました！\n" +
-      ":fire: 連続 " + s.streak + "日目　:dart: 累計達成率 " + s.rate + "%";
-    day.notified.push(habitId);
-    persist();
-    sendSlack(msg).then((ok) => showToast(ok ? "Slackに通知しました" : "Slack通知に失敗しました"));
-  }
+function postToday() {
+  const key = todayKey();
+  const day = logs[key] || { done: [] };
+  if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
+  const s = computeStats();
+  const lines = profile.habits.map((h) => {
+    if (day.done.includes(h.id)) {
+      const hs = computeHabitStats(h.id);
+      return ":white_check_mark: " + h.name + "（" + hs.streak + "日連続）";
+    }
+    return ":white_large_square: " + h.name;
+  }).join("\n");
+  const isUpdate = !!day.posted;
+  const msg = ":large_blue_circle: 【Daily Circle】" + profile.name + " さんの今日の記録" +
+    (isUpdate ? "（更新）" : "") + "\n" + lines +
+    "\n:fire: 投稿" + s.streak + "日連続中";
+  sendSlack(msg).then((ok) => {
+    if (ok) {
+      day.posted = true;
+      logs[key] = day;
+      persist();
+      render();
+      showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
+    } else {
+      showToast("投稿に失敗しました。通信環境を確認してください");
+    }
+  });
 }
 
 /* ---------- views ---------- */
@@ -328,7 +346,7 @@ function headerView(stats) {
 }
 
 function todayView() {
-  const day = logs[todayKey()] || { done: [] };
+  const day = logs[todayKey()] || { done: [], posted: false };
   const d = new Date();
   const wd = ["日","月","火","水","木","金","土"][d.getDay()];
   const allDone = day.done.length === profile.habits.length;
@@ -343,7 +361,13 @@ function todayView() {
       '<span class="action-name">' + esc(h.name) + '</span></button>';
   });
   if (allDone) html += '<p class="all-done">本日の習慣、すべて達成。お疲れさまでした。</p>';
-  if (!webhookUrl()) html += '<p class="note">Slack通知は現在オフになっています（管理者側で設定されます）。</p>';
+  if (webhookUrl()) {
+    html += '<button class="btn-primary post-btn" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
+      (day.posted ? '今日の記録を再投稿する' : '今日の記録をSlackに投稿する') + '</button>';
+    if (day.posted) html += '<p class="note" style="text-align:center">本日は投稿済みです。チェックを変更したら再投稿できます。</p>';
+  } else {
+    html += '<p class="note">Slack通知は現在オフになっています（管理者側で設定されます）。</p>';
+  }
   html += '</section></main>';
   return html;
 }
@@ -482,6 +506,8 @@ function bindOnb() {
 function bindApp() {
   document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
   document.querySelectorAll(".action-row").forEach((b) => (b.onclick = () => toggleHabit(b.dataset.habit)));
+  const post = $("#post-today");
+  if (post) post.onclick = postToday;
 
   const addGoal = $("#st-add-goal");
   if (addGoal) addGoal.onclick = () => {
