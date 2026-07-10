@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Daily Circle — 日々の記録帳</title>
 <meta name="description" content="Daily Circle — Circleの一年目標を、毎日の習慣でつなぐ記録帳。">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F7F4EE">
+<meta name="apple-mobile-web-app-title" content="Daily Circle">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -193,7 +198,9 @@ const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const todayKey = () => keyFromDate(new Date());
+const DAY_SHIFT_MS = 3 * 3600 * 1000; // 深夜3時までは前日としてカウント
+const appNow = () => new Date(Date.now() - DAY_SHIFT_MS);
+const todayKey = () => keyFromDate(appNow());
 function keyFromDate(d) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
@@ -293,7 +300,7 @@ function showToast(msg) {
 
 /* ---------- month ring (①) ---------- */
 function yearRingHTML(s) {
-  const now = new Date();
+  const now = appNow();
   const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   let monthDays = 0;
   for (let i = 1; i <= dim; i++) {
@@ -366,7 +373,7 @@ function showCelebration(m) {
 /* ---------- monthly record card (⑥) ---------- */
 async function generateCard() {
   try { await document.fonts.ready; } catch (e) {}
-  const now = new Date();
+  const now = appNow();
   const y = now.getFullYear(), mo = now.getMonth();
   const dim = new Date(y, mo + 1, 0).getDate();
   const nHabits = profile.habits.length || 1;
@@ -446,6 +453,45 @@ async function generateCard() {
   showToast("記録カードを保存しました");
 }
 
+
+/* ---------- weekly report ---------- */
+function mondayOf(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // 月曜起点
+  return x;
+}
+
+function weeklyReportMsg() {
+  const M = mondayOf(appNow());
+  const wk = keyFromDate(M);
+  if ((profile.lastWeeklyReport || "") === wk) return null;
+  const prevM = new Date(M); prevM.setDate(prevM.getDate() - 7);
+  if (dateFromKey(profile.startDate) > new Date(M.getTime() - 1)) return null; // 先週より後に開始した人はスキップ
+  const dayKeys = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(prevM); d.setDate(d.getDate() + i);
+    dayKeys.push(keyFromDate(d));
+  }
+  let recDays = 0;
+  dayKeys.forEach((k) => { if (logs[k] && (logs[k].done || []).length > 0) recDays++; });
+  const lines = profile.habits.map((h) => {
+    let row = "", n = 0;
+    dayKeys.forEach((k) => {
+      const on = logs[k] && (logs[k].done || []).includes(h.id);
+      row += on ? ":large_blue_circle:" : ":white_circle:";
+      if (on) n++;
+    });
+    return row + " " + h.name + "（" + n + "/7）";
+  }).join("\n");
+  const fmt = (k) => { const p = k.split("-"); return Number(p[1]) + "/" + Number(p[2]); };
+  return {
+    wk,
+    text: ":bar_chart: 【Daily Circle】" + profile.name + " さんの先週のふりかえり（" +
+      fmt(dayKeys[0]) + "〜" + fmt(dayKeys[6]) + "・月〜日）\n" + lines +
+      "\n:pencil: 記録した日 " + recDays + "/7日"
+  };
+}
+
 /* ---------- actions ---------- */
 function toggleHabit(habitId) {
   const key = todayKey();
@@ -485,6 +531,16 @@ function postToday() {
       render();
       if (milestone) showCelebration(milestone);
       showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
+      const wr = weeklyReportMsg();
+      if (wr) {
+        sendSlack(wr.text).then((ok2) => {
+          if (ok2) {
+            profile.lastWeeklyReport = wr.wk;
+            persist();
+            showToast("先週のふりかえりも投稿しました");
+          }
+        });
+      }
     } else {
       showToast("投稿に失敗しました。通信環境を確認してください");
     }
@@ -530,7 +586,7 @@ function headerView(stats) {
 
 function todayView() {
   const day = logs[todayKey()] || { done: [], posted: false };
-  const d = new Date();
+  const d = appNow();
   const wd = ["日","月","火","水","木","金","土"][d.getDay()];
   const allDone = day.done.length === profile.habits.length;
   let html = '<main class="body">' +
@@ -557,9 +613,9 @@ function todayView() {
 }
 
 function recordView(stats) {
-  const year = new Date().getFullYear();
+  const year = appNow().getFullYear();
   const nHabits = profile.habits.length || 1;
-  const today = new Date();
+  const today = appNow();
   let grid = "";
   for (let m = 0; m < 12; m++) {
     const dim = new Date(year, m + 1, 0).getDate();
@@ -612,7 +668,7 @@ function recordView(stats) {
     habitRows + '</section>' +
     '<section class="card"><h2 class="card-title">今月の記録カード</h2>' +
     '<p class="card-sub">この月のドットと成績を1枚の画像（1080×1080）にまとめます。Slackやインスタでの共有用に。</p>' +
-    '<button class="btn-primary" id="dl-card">' + (new Date().getMonth() + 1) + '月の記録カードを保存する</button>' +
+    '<button class="btn-primary" id="dl-card">' + (appNow().getMonth() + 1) + '月の記録カードを保存する</button>' +
     '<p class="note">スマホで保存されない場合は、開いた画像を長押しして「写真に保存」してください。</p>' +
     '</section></main>';
 }
