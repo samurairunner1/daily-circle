@@ -154,6 +154,187 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
   max-width:90vw;overflow:hidden;text-overflow:ellipsis;
 }
 
+/* v2: day head + mini ring */
+.day-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:8px 0 2px}
+.day-sub{font-size:11.5px;color:#4A4E58;letter-spacing:.04em;margin-top:5px}
+.mini-ring{position:relative;width:66px;height:66px;flex-shrink:0}
+.mini-ring svg{width:100%;height:100%;display:block}
+.mini-ring-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.mini-ring-txt small{font-size:10px;font-weight:500;color:#4A4E58;margin-left:1px}
+.mini-ring.gold .mini-ring-txt{color:#B08A3E}
+
+/* v2: habit rows with streak */
+.action-body{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.action-streak{font-size:10.5px;color:#B08A3E;font-weight:700;letter-spacing:.06em}
+.card-done::before{background:#B08A3E}
+
+/* v2: completion panel */
+.done-panel{text-align:center}
+.done-panel::before{background:#B08A3E}
+.done-mark{width:46px;height:46px;border-radius:50%;background:#B08A3E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px}
+.done-panel .btn-ghost{margin-top:4px}
+
+/* v2: goals fold */
+.goals-fold{border-top:1px solid rgba(25,28,34,.12);padding-top:14px}
+.goals-fold summary{cursor:pointer;list-style:none;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;color:#4A4E58;position:relative;padding-right:20px}
+.goals-fold summary::-webkit-details-marker{display:none}
+.goals-fold summary::after{content:"";position:absolute;right:4px;top:.36em;width:8px;height:8px;border-right:1.5px solid #28407A;border-bottom:1.5px solid #28407A;transform:rotate(45deg);transition:transform .3s}
+.goals-fold[open] summary::after{transform:rotate(-135deg);top:.6em}
+.goals-fold .goals-box{margin-top:12px}
+
+/* v2: tab indicators */
+.tab{display:flex;align-items:center;justify-content:center;gap:5px}
+.tab-dot{width:5px;height:5px;border-radius:50%;background:rgba(40,64,122,.42);display:inline-block}
+.tab.on .tab-dot{background:#28407A}
+.tab-badge{min-width:17px;height:17px;border-radius:999px;background:#7A2828;color:#fff;font-family:'Zen Kaku Gothic New',sans-serif;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;letter-spacing:0}
+.tab.on::after{bottom:4px}
+
+/* v3: journal in habit tab */
+.opt-tag{font-size:10px;font-weight:500;letter-spacing:.1em;color:#4A4E58;border:1px solid rgba(25,28,34,.2);border-radius:999px;padding:2px 8px;margin-left:9px;vertical-align:2px;font-family:'Zen Kaku Gothic New',sans-serif}
+
+/* v3: journal review */
+.jrv-list{margin-top:20px}
+.jrv-month{margin-bottom:18px}
+.jrv-month-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13px;letter-spacing:.08em;color:#28407A;padding-bottom:7px;border-bottom:1px solid rgba(25,28,34,.12);display:flex;justify-content:space-between;align-items:baseline}
+.jrv-month-label span{font-size:10.5px;color:#4A4E58;font-family:'Zen Kaku Gothic New',sans-serif;font-weight:500;letter-spacing:.06em}
+.jrv{border-bottom:1px solid rgba(25,28,34,.07)}
+.jrv summary{cursor:pointer;list-style:none;padding:11px 18px 11px 0;display:flex;gap:11px;align-items:baseline;position:relative}
+.jrv summary::-webkit-details-marker{display:none}
+.jrv summary::after{content:"";position:absolute;right:3px;top:1.15em;width:7px;height:7px;border-right:1.4px solid rgba(40,64,122,.5);border-bottom:1.4px solid rgba(40,64,122,.5);transform:rotate(45deg);transition:transform .25s}
+.jrv[open] summary::after{transform:rotate(-135deg);top:1.35em}
+.jrv-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;color:#B08A3E;flex-shrink:0;min-width:34px}
+.jrv-peek{font-size:12px;color:#4A4E58;line-height:1.7;overflow:hidden}
+.jrv-body{padding:2px 0 14px}
+.jrv-q{font-size:11px;font-weight:700;color:#28407A;letter-spacing:.04em;margin-top:10px}
+.jrv-a{font-size:13px;color:#191C22;line-height:2;margin-top:3px;white-space:pre-wrap}
+
+/* v3: journal stars */
+.stars{display:flex;align-items:center;gap:5px;margin:2px 0 16px}
+.star{width:34px;height:34px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.star svg{width:26px;height:26px;fill:none;stroke:rgba(40,64,122,.35);stroke-width:1.6;transition:all .18s ease}
+.star.on svg{fill:#B08A3E;stroke:#B08A3E}
+.star:hover svg{stroke:#B08A3E}
+.star-clear{font-size:10.5px;color:#4A4E58;margin-left:6px;cursor:pointer;letter-spacing:.06em;text-decoration:underline;text-underline-offset:2px}
+.jrv-stars{font-size:11px;color:#B08A3E;letter-spacing:.06em;flex-shrink:0}
+
+/* v3: weather selector (心・体 それぞれフル幅1行) */
+.w-line{display:flex;flex-direction:column;gap:6px;margin:2px 0 14px}
+.w-unit{display:flex;align-items:center;gap:9px}
+.w-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.1em;color:#191C22;width:20px;flex-shrink:0}
+.w-opts{display:flex;gap:6px;flex:1}
+.w-opt{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 4px;border:1px solid rgba(25,28,34,.16);border-radius:2px;
+  background:#fff;cursor:pointer;transition:all .18s ease;font-family:inherit;
+}
+.w-opt svg{width:22px;height:22px;flex-shrink:0}
+.w-opt span{font-size:11.5px;color:#4A4E58;letter-spacing:.06em}
+.w-opt .w-fill{fill:rgba(25,28,34,.2)}
+.w-opt .w-stroke{stroke:rgba(25,28,34,.2);stroke-width:2;stroke-linecap:round}
+.w-opt.on{border-color:#28407A;background:rgba(40,64,122,.07)}
+.w-opt.on .w-fill{fill:#28407A}
+.w-opt.on .w-stroke{stroke:#28407A}
+.w-opt.on span{color:#28407A;font-weight:700}
+.jr-ta{min-height:52px}
+
+/* v3: weather grid */
+.wg{margin-top:20px}
+.wg-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;color:#28407A;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+.wg-title span{font-family:'Zen Kaku Gothic New',sans-serif;font-size:10.5px;font-weight:500;color:#4A4E58;letter-spacing:.04em}
+
+/* v3: weather icon in list */
+.jrv-ws{display:inline-flex;gap:3px;flex-shrink:0;align-items:center}
+.jrv-w svg{width:15px;height:15px;display:block}
+.jrv-w .w-fill{fill:rgba(40,64,122,.62)}
+.jrv-w .w-stroke{stroke:rgba(40,64,122,.62);stroke-width:2.2;stroke-linecap:round}
+
+/* v3: TAV review list */
+.tvr-list{margin-top:4px}
+.tvr{border-bottom:1px solid rgba(25,28,34,.08)}
+.tvr:last-child{border-bottom:none}
+.tvr summary{cursor:pointer;list-style:none;padding:11px 18px 11px 0;display:flex;gap:11px;align-items:baseline;position:relative}
+.tvr summary::-webkit-details-marker{display:none}
+.tvr summary::after{content:"";position:absolute;right:3px;top:1.15em;width:7px;height:7px;border-right:1.4px solid rgba(40,64,122,.5);border-bottom:1.4px solid rgba(40,64,122,.5);transform:rotate(45deg);transition:transform .25s}
+.tvr[open] summary::after{transform:rotate(-135deg);top:1.35em}
+.tvr-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;color:#B08A3E;flex-shrink:0;min-width:32px}
+.tvr-title{font-size:13px;font-weight:700;line-height:1.7;color:#191C22}
+.tvr-body{padding:2px 0 14px}
+.tvr-q{font-size:10px;font-weight:700;letter-spacing:.14em;color:#B08A3E;margin-top:9px}
+.tvr-a{font-size:12.5px;color:#191C22;line-height:1.95;margin-top:3px;white-space:pre-wrap}
+
+/* v3: day switch (昨日編集) */
+.day-switch{display:flex;gap:6px;margin:2px 0 4px}
+.dsw{background:transparent;border:1px solid rgba(25,28,34,.16);border-radius:999px;padding:6px 16px;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;letter-spacing:.1em;color:#4A4E58;cursor:pointer}
+.dsw.on{background:#28407A;border-color:#28407A;color:#F7F4EE}
+.yst-tag{font-size:10px;font-weight:700;letter-spacing:.1em;background:#B08A3E;color:#fff;border-radius:999px;padding:3px 9px;margin-left:9px;vertical-align:3px;font-family:'Zen Kaku Gothic New',sans-serif}
+
+/* v3: settings habit rows */
+.st-hrow{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.st-hrow .fld{margin-bottom:0;flex:1}
+.st-hmove{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.st-mv{width:26px;height:19px;border:1px solid rgba(25,28,34,.16);background:#fff;border-radius:2px;font-size:8px;color:#28407A;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;justify-content:center}
+.st-mv:disabled{opacity:.28;cursor:default}
+.st-hdel{width:28px;height:28px;border:none;background:transparent;color:rgba(25,28,34,.32);font-size:19px;cursor:pointer;padding:0;flex-shrink:0;line-height:1}
+.st-hdel:hover:not(:disabled){color:#7A2828}
+.st-hdel:disabled{opacity:.2;cursor:default}
+
+/* header menu */
+.top-right{display:flex;align-items:center;gap:8px;position:relative}
+.menu-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(25,28,34,.16);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.menu-btn svg{width:19px;height:19px}
+.menu-pop{position:absolute;top:44px;right:0;background:#fff;border:1px solid rgba(25,28,34,.16);border-radius:2px;box-shadow:0 10px 30px rgba(25,28,34,.16);z-index:60;min-width:172px;overflow:hidden}
+.menu-item{display:block;width:100%;text-align:left;background:transparent;border:none;border-bottom:1px solid rgba(25,28,34,.08);padding:14px 18px;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#191C22;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:#F7F4EE}
+
+/* overlay pages */
+.ov{min-height:100vh;background:#F7F4EE}
+.ov-bar{display:flex;align-items:center;gap:12px;padding:18px 20px 6px;position:sticky;top:0;background:rgba(247,244,238,.96);backdrop-filter:blur(4px);z-index:30}
+.ov-back{width:36px;height:36px;border-radius:50%;border:1px solid rgba(25,28,34,.16);background:transparent;font-size:16px;color:#191C22;cursor:pointer;line-height:1}
+.ov-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:.12em}
+
+/* journal */
+.chk{display:flex;align-items:center;gap:9px;margin:4px 0 14px;font-size:13px;color:#4A4E58;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:#28407A;cursor:pointer}
+.jr-past{padding:12px 0;border-bottom:1px solid rgba(25,28,34,.08)}
+.jr-past:last-child{border-bottom:none}
+.jr-past-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;color:#28407A;letter-spacing:.06em}
+.jr-past-body{font-size:12.5px;color:#4A4E58;line-height:1.9;margin-top:4px}
+
+/* TAV */
+.chips{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.chip{background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:7px 13px;font-family:inherit;font-size:11.5px;color:#4A4E58;cursor:pointer;letter-spacing:.04em}
+.chip.on{background:#28407A;border-color:#28407A;color:#F7F4EE;font-weight:700}
+.tav{border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:15px 14px 13px;margin-bottom:11px;background:#fff;position:relative}
+.tav-over{border-color:rgba(122,40,40,.4);background:#FDF7F6}
+.tav-done{background:#FAFAF7}
+.tav-no{opacity:.62}
+.tav-head{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.tav-badge{font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:999px}
+.b-new{background:#EDEAE1;color:#4A4E58}
+.b-plan{background:#28407A;color:#F7F4EE}
+.b-over{background:#7A2828;color:#fff}
+.b-done{background:#B08A3E;color:#fff}
+.b-no{background:transparent;border:1px solid rgba(25,28,34,.25);color:#4A4E58}
+.tav-due{font-size:11px;color:#4A4E58;letter-spacing:.04em}
+.tav-title{font-size:14.5px;font-weight:700;line-height:1.7;letter-spacing:.02em;padding-right:22px}
+.tav-memo{font-size:12.5px;color:#4A4E58;line-height:1.9;margin-top:5px}
+.tav-review{font-size:12.5px;color:#191C22;line-height:1.9;margin-top:9px;padding:9px 11px;background:#F7F4EE;border-left:2px solid #B08A3E}
+.tav-review span{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;color:#B08A3E;margin-bottom:2px}
+.tav-actions{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.tav-actions .btn-ghost.sm{width:auto;padding:6px 12px;margin:0;font-size:11.5px}
+.tav-del{position:absolute;top:9px;right:9px;width:24px;height:24px;border:none;background:transparent;color:rgba(25,28,34,.3);font-size:17px;cursor:pointer;line-height:1;padding:0}
+.tav-del:hover{color:#7A2828}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(25,28,34,.55);display:flex;align-items:center;justify-content:center;z-index:120;padding:24px}
+.modal-card{background:#fff;border-radius:2px;padding:26px 22px 20px;max-width:360px;width:100%;position:relative;max-height:86vh;overflow:auto}
+.modal-card::before{content:"";position:absolute;top:0;left:22px;width:44px;height:3px;background:#28407A}
+.modal-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;letter-spacing:.06em;margin-bottom:14px}
+.modal-btns{display:flex;gap:9px;margin-top:6px}
+.modal-btns .btn-ghost{margin:0;flex:1}
+.modal-btns .btn-primary,.modal-btns .btn-danger{flex:1.4;padding:11px;font-size:13.5px}
+
 /* year ring */
 .ring-wrap{position:relative;max-width:270px;margin:10px auto 0;width:82%}
 .ring-wrap svg{width:100%;height:auto;display:block}
@@ -216,16 +397,38 @@ function load(key) {
 function persist() {
   localStorage.setItem("circle_profile", JSON.stringify(profile));
   localStorage.setItem("circle_logs", JSON.stringify(logs));
+  localStorage.setItem("circle_journals", JSON.stringify(journals));
+  localStorage.setItem("circle_tavs", JSON.stringify(tavs));
 }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ---------- state ---------- */
 let profile = load("circle_profile");
 let logs = load("circle_logs") || {};
-let tab = "today";
+let journals = load("circle_journals") || {};
+let tavs = load("circle_tavs") || [];
+let tab = "habit";
+let menuOpen = false;
+let overlay = null;   // "review" | "settings" | null
+let tavFilter = "active";
+let editYesterday = false;
 let toastTimer = null;
 let ringAnimated = false;
 
 const MILESTONES = [7, 30, 66, 100, 200, 365];
+
+const WEATHER = [
+  { id: "sun",   label: "晴れ", emoji: ":sunny:" },
+  { id: "cloud", label: "曇り", emoji: ":cloud:" },
+  { id: "rain",  label: "雨",   emoji: ":umbrella_with_rain_drops:" },
+];
+const WEATHER_COLOR = { sun: "#28407A", cloud: "rgba(40,64,122,.42)", rain: "rgba(40,64,122,.16)" };
+
+const JOURNAL_QUESTIONS = [
+  { id: "q1", label: "今日、心が動いたのはどんな場面だった？" },
+  { id: "q2", label: "そのとき、どんな感情だった？" },
+  { id: "q3", label: "明日、ひとつだけ変えるとしたら？" },
+];
 
 const webhookUrl = () => SLACK_WEBHOOK;
 
@@ -494,7 +697,7 @@ function weeklyReportMsg() {
 
 /* ---------- actions ---------- */
 function toggleHabit(habitId) {
-  const key = todayKey();
+  const key = targetKey();
   const day = logs[key] || { done: [] };
   const wasDone = day.done.includes(habitId);
   day.done = wasDone ? day.done.filter((x) => x !== habitId) : [...day.done, habitId];
@@ -504,7 +707,7 @@ function toggleHabit(habitId) {
 }
 
 function postToday() {
-  const key = todayKey();
+  const key = targetKey();
   const day = logs[key] || { done: [] };
   if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
   const s = computeStats();
@@ -518,7 +721,12 @@ function postToday() {
   const isUpdate = !!day.posted;
   const celebrated = profile.celebrated || [];
   const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
-  const msg = ":large_blue_circle: 【Daily Circle】" + profile.name + " さんの今日の記録" +
+  const dd = dateFromKey(key);
+  const dayLabel = editYesterday
+    ? "の記録（" + (dd.getMonth() + 1) + "/" + dd.getDate() + "・後から記録）"
+    : "さんの今日の記録".slice(3);
+  const msg = ":large_blue_circle: 【Daily Circle】" + profile.name + " さん" +
+    (editYesterday ? dayLabel : "の今日の記録") +
     (isUpdate ? "（更新）" : "") + "\n" + lines +
     "\n:fire: 投稿" + s.streak + "日連続中" +
     (milestone ? "\n:tada: :confetti_ball: 祝・投稿" + milestone + "日連続を達成！ :confetti_ball: :tada:" : "");
@@ -545,6 +753,156 @@ function postToday() {
       showToast("投稿に失敗しました。通信環境を確認してください");
     }
   });
+}
+
+
+/* ---------- journal actions ---------- */
+function saveJournal() {
+  const key = todayKey();
+  const entry = journals[key] || {};
+  let any = false;
+  document.querySelectorAll(".jr-field").forEach((el) => {
+    entry[el.dataset.q] = el.value.trim();
+    if (el.value.trim()) any = true;
+  });
+  if (!any) { showToast("ひとつでも書いてから保存してください"); return; }
+  document.querySelectorAll("[data-weather]").forEach((el) => {
+    entry[el.dataset.weather] = el.dataset.val || "";
+    if (el.dataset.val) any = true;
+  });
+  const starBox = $("#jr-stars");
+  entry.stars = starBox ? Number(starBox.dataset.val || 0) : (entry.stars || 0);
+  entry.savedAt = Date.now();
+  const share = $("#jr-share") && $("#jr-share").checked;
+  journals[key] = entry;
+  persist();
+
+  if (share && webhookUrl()) {
+    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "*" + q.label + "*\n" + entry[q.id] : "")
+      .filter(Boolean).join("\n");
+    const d = appNow();
+    const st = entry.stars ? "\n" + ":star:".repeat(entry.stars) : "";
+    const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.emoji + " " + w.label : ""; };
+    const wl = (entry.mind || entry.body)
+      ? "\n心 " + (wOf(entry.mind) || "—") + "　体 " + (wOf(entry.body) || "—") : "";
+    sendSlack(":writing_hand: 【Daily Circle】" + profile.name + " さんのジャーナル（" +
+      (d.getMonth() + 1) + "/" + d.getDate() + "）" + st + wl + "\n" + body).then((ok) => {
+      if (ok) { entry.posted = true; journals[key] = entry; persist(); }
+      render();
+      showToast(ok ? "保存してSlackに共有しました" : "保存しました（Slack共有に失敗）");
+    });
+  } else {
+    entry.posted = false;
+    journals[key] = entry;
+    persist();
+    render();
+    showToast("保存しました");
+  }
+}
+
+/* ---------- TAV actions ---------- */
+function addTav() {
+  const title = $("#tav-title").value.trim();
+  if (!title) { showToast("気づきを入力してください"); return; }
+  tavs.unshift({ id: uid(), title, memo: $("#tav-memo").value.trim(), decision: null, due: "", review: "", createdAt: todayKey() });
+  persist();
+  tavFilter = "active";
+  render();
+  showToast("気づきを追加しました");
+}
+
+function findTav(id) { return tavs.find((t) => t.id === id); }
+
+function tavSetDue(id) {
+  const t = findTav(id);
+  if (!t) return;
+  const def = t.due || (() => { const d = appNow(); d.setDate(d.getDate() + 7); return keyFromDate(d); })();
+  openModal({
+    title: "いつまでにやる？",
+    body: '<label class="fld-label">期日</label><input class="fld" type="date" id="md-due" value="' + def + '">',
+    okLabel: "決定する",
+    onOk: () => {
+      const v = $("#md-due").value;
+      if (!v) { showToast("期日を選んでください"); return false; }
+      t.decision = "yes"; t.due = v; t.completedAt = null; t.touchedAt = todayKey();
+      persist(); render(); showToast("期日を設定しました");
+    },
+  });
+}
+
+function tavComplete(id) {
+  const t = findTav(id);
+  if (!t) return;
+  openModal({
+    title: "やってみて、どうだった？",
+    body: '<textarea class="fld" id="md-review" placeholder="実行した結果と、そこから得たこと"></textarea>' +
+      (webhookUrl()
+        ? '<label class="chk" style="margin-bottom:14px"><input type="checkbox" id="md-share"><span>Slackに共有する</span></label>'
+        : ''),
+    okLabel: "完了にする",
+    onOk: () => {
+      const v = $("#md-review").value.trim();
+      if (!v) { showToast("振り返りを書いてください"); return false; }
+      const share = $("#md-share") && $("#md-share").checked;
+      t.review = v; t.completedAt = todayKey(); t.decision = "yes"; t.touchedAt = todayKey();
+      t.shared = !!share;
+      persist(); render();
+      if (share && webhookUrl()) {
+        sendSlack(":bulb: 【Daily Circle】" + profile.name + " さんがTAVを実行しました\n" +
+          "*気づき*：" + t.title + "\n*やってみて*：" + v).then((ok) =>
+          showToast(ok ? "完了しました。Slackに共有しました" : "完了しました（Slack共有に失敗）"));
+      } else showToast("完了しました");
+    },
+  });
+}
+
+function tavShare(id) {
+  const t = findTav(id);
+  if (!t || !webhookUrl()) return;
+  sendSlack(":bulb: 【Daily Circle】" + profile.name + " さんがTAVを実行しました\n" +
+    "*気づき*：" + t.title + "\n*やってみて*：" + t.review).then((ok) => {
+    if (ok) { t.shared = true; persist(); render(); }
+    showToast(ok ? "Slackに共有しました" : "共有に失敗しました");
+  });
+}
+
+function tavSkip(id) {
+  const t = findTav(id);
+  if (!t) return;
+  t.decision = "no"; t.due = ""; t.completedAt = null; t.touchedAt = todayKey();
+  persist(); render(); showToast("「やらない」として記録しました");
+}
+
+function tavRevive(id) {
+  const t = findTav(id);
+  if (!t) return;
+  t.decision = null;
+  persist(); render();
+}
+
+function tavDelete(id) {
+  openModal({
+    title: "この気づきを削除しますか？",
+    body: '<p class="card-sub">削除すると元に戻せません。「やらない」として残すこともできます。</p>',
+    okLabel: "削除する",
+    danger: true,
+    onOk: () => { tavs = tavs.filter((t) => t.id !== id); persist(); render(); showToast("削除しました"); },
+  });
+}
+
+/* ---------- modal ---------- */
+function openModal({ title, body, okLabel, onOk, danger }) {
+  const el = document.createElement("div");
+  el.className = "modal";
+  el.innerHTML = '<div class="modal-card"><h3 class="modal-title">' + title + '</h3>' + body +
+    '<div class="modal-btns"><button class="btn-ghost" id="md-cancel">やめる</button>' +
+    '<button class="' + (danger ? "btn-danger" : "btn-primary") + '" id="md-ok">' + okLabel + '</button></div></div>';
+  document.body.appendChild(el);
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.querySelector("#md-cancel").onclick = () => el.remove();
+  el.querySelector("#md-ok").onclick = () => { if (onOk() !== false) el.remove(); };
+  const first = el.querySelector("input, textarea");
+  if (first) first.focus();
 }
 
 /* ---------- views ---------- */
@@ -580,36 +938,420 @@ function headerView(stats) {
   return '<header class="top">' +
     '<div class="brand"><span class="brand-mark">' + RING + '</span>' +
     '<div><div class="brand-name">Daily Circle</div><div class="brand-sub">' + esc(profile.name) + ' さんの一年の記録</div></div></div>' +
-    '<div class="streak-pill"><span class="streak-num">' + stats.streak + '</span><span class="streak-label">日連続</span></div>' +
+    '<div class="top-right">' +
+      '<div class="streak-pill"><span class="streak-num">' + stats.streak + '</span><span class="streak-label">日連続</span></div>' +
+      '<button class="menu-btn" id="menu-btn" aria-label="メニュー">' +
+        '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="#191C22" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+      '</button>' +
+      (menuOpen ? '<div class="menu-pop"><button class="menu-item" data-open="settings">設定</button></div>' : '') +
+    '</div>' +
   '</header>';
 }
 
-function todayView() {
-  const day = logs[todayKey()] || { done: [], posted: false };
-  const d = appNow();
+function yesterdayKey() {
+  const d = appNow(); d.setDate(d.getDate() - 1);
+  return keyFromDate(d);
+}
+function targetKey() { return editYesterday ? yesterdayKey() : todayKey(); }
+
+function habitView() {
+  const tk = targetKey();
+  const day = logs[tk] || { done: [], posted: false };
+  const d = dateFromKey(tk);
   const wd = ["日","月","火","水","木","金","土"][d.getDay()];
   const allDone = day.done.length === profile.habits.length;
+
+  // 日付 + 小リング（横並び）
   let html = '<main class="body">' +
-    '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
-    yearRingHTML(computeStats()) +
-    '<div class="goals-box">' + profile.goals.map((g) => '<p class="goal-line">' + esc(g) + '</p>').join("") + '</div>' +
-    '<section class="card"><h2 class="card-title">今日の習慣</h2>';
+    '<div class="day-head">' +
+      '<div><div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span>' +
+      '<span class="date-wd">' + wd + '曜日</span>' +
+      (editYesterday ? '<span class="yst-tag">昨日</span>' : '') + '</div>' +
+      '<div class="day-sub">' + (day.posted
+        ? (editYesterday ? '昨日の記録は投稿済みです' : '今日の記録は投稿済みです')
+        : (editYesterday ? '昨日の記録を追加できます' : '今日の習慣を記録しましょう')) + '</div></div>' +
+      miniRingHTML() +
+    '</div>' +
+    '<div class="day-switch">' +
+      '<button class="dsw' + (editYesterday ? '' : ' on') + '" data-day="today">今日</button>' +
+      '<button class="dsw' + (editYesterday ? ' on' : '') + '" data-day="yesterday">昨日</button>' +
+    '</div>';
+
+  // 習慣カード（最上部・すぐ届く位置）
+  html += '<section class="card' + (day.posted ? ' card-done' : '') + '"><h2 class="card-title">' +
+    (editYesterday ? '昨日の習慣' : '今日の習慣') + '</h2>';
   profile.habits.forEach((h) => {
     const done = day.done.includes(h.id);
+    const hs = computeHabitStats(h.id);
     html += '<button class="action-row' + (done ? " done" : "") + '" data-habit="' + h.id + '">' +
       '<span class="stamp' + (done ? " pressed" : "") + '">' + (done ? "済" : "") + '</span>' +
-      '<span class="action-name">' + esc(h.name) + '</span></button>';
+      '<span class="action-body"><span class="action-name">' + esc(h.name) + '</span>' +
+      (hs.streak > 0 ? '<span class="action-streak">' + hs.streak + '日連続中</span>' : '') +
+      '</span></button>';
   });
   if (allDone) html += '<p class="all-done">本日の習慣、すべて達成。お疲れさまでした。</p>';
   if (webhookUrl()) {
     html += '<button class="btn-primary post-btn" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
-      (day.posted ? '今日の記録を再投稿する' : '今日の記録をSlackに投稿する') + '</button>';
-    if (day.posted) html += '<p class="note" style="text-align:center">本日は投稿済みです。チェックを変更したら再投稿できます。</p>';
+      (day.posted
+        ? (editYesterday ? '昨日の記録を再投稿する' : '今日の記録を再投稿する')
+        : (editYesterday ? '昨日の記録をSlackに投稿する' : '今日の記録をSlackに投稿する')) + '</button>';
   } else {
     html += '<p class="note">Slack通知は現在オフになっています（管理者側で設定されます）。</p>';
   }
-  html += '</section></main>';
-  return html;
+  html += '</section>';
+
+  // ③ 完了感：投稿後に次の導線を出す
+  if (day.posted && !editYesterday) {
+    const jDone = !!(journals[todayKey()] && journals[todayKey()].savedAt);
+    html += '<section class="card done-panel"><div class="done-mark">✓</div>' +
+      '<h2 class="card-title" style="text-align:center">今日の記録は完了しました</h2>' +
+      '<p class="card-sub" style="text-align:center">' +
+      (jDone ? 'ジャーナルも記録済みです。今日もお疲れさまでした。' : 'よければ、下のジャーナルで今日を少し振り返っておきましょう。') + '</p>' +
+      '<button class="btn-ghost" data-goto="tav" style="margin-bottom:0">気づき（TAV）を見る</button>' +
+      '</section>';
+  }
+
+  // ジャーナル（今日のみ）
+  if (!editYesterday) html += journalCardHTML();
+
+  // 目標は折りたたみ（毎日読むものではない）
+  html += '<details class="goals-fold"><summary>この一年の目標</summary>' +
+    '<div class="goals-box">' + profile.goals.map((g) => '<p class="goal-line">' + esc(g) + '</p>').join("") + '</div>' +
+    '</details>';
+
+  return html + '</main>';
+}
+
+
+/* ---------- weather ---------- */
+function weatherSVG(id) {
+  if (id === "sun") return '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="6.4" class="w-fill"/>' +
+    [0,45,90,135,180,225,270,315].map((a) => {
+      const r = a * Math.PI / 180;
+      return '<line x1="' + (16 + Math.cos(r) * 9.6).toFixed(1) + '" y1="' + (16 + Math.sin(r) * 9.6).toFixed(1) +
+        '" x2="' + (16 + Math.cos(r) * 13.2).toFixed(1) + '" y2="' + (16 + Math.sin(r) * 13.2).toFixed(1) + '" class="w-stroke"/>';
+    }).join("") + '</svg>';
+  if (id === "cloud") return '<svg viewBox="0 0 32 32">' +
+    '<path d="M9.5 23h13a5 5 0 0 0 .4-9.98A7.2 7.2 0 0 0 9.3 13.3 4.9 4.9 0 0 0 9.5 23z" class="w-fill"/></svg>';
+  return '<svg viewBox="0 0 32 32">' +
+    '<path d="M9.5 19h13a4.6 4.6 0 0 0 .4-9.2A6.7 6.7 0 0 0 9.3 9.4 4.5 4.5 0 0 0 9.5 19z" class="w-fill"/>' +
+    '<line x1="11.5" y1="22.5" x2="10" y2="26.5" class="w-stroke"/>' +
+    '<line x1="16" y1="22.5" x2="14.5" y2="26.5" class="w-stroke"/>' +
+    '<line x1="20.5" y1="22.5" x2="19" y2="26.5" class="w-stroke"/></svg>';
+}
+
+function weatherRowHTML(kind, label, current) {
+  return '<div class="w-unit"><span class="w-label">' + label + '</span>' +
+    '<div class="w-opts" data-weather="' + kind + '" data-val="' + (current || "") + '">' +
+    WEATHER.map((w) =>
+      '<button class="w-opt' + (current === w.id ? " on" : "") + '" data-w="' + w.id + '" aria-label="' + label + ' ' + w.label + '">' +
+      weatherSVG(w.id) + '<span>' + w.label + '</span></button>'
+    ).join("") + '</div></div>';
+}
+
+/* ---------- TAV review (振り返りタブ) ---------- */
+function tavReviewHTML() {
+  const done = tavs.filter((t) => t.completedAt).sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
+  const skipped = tavs.filter((t) => tavStatus(t) === "no").length;
+  const active = tavs.filter((t) => ["plan", "over", "new"].includes(tavStatus(t))).length;
+
+  if (tavs.length === 0) {
+    return '<section class="card"><h2 class="card-title">実行したTAV</h2>' +
+      '<p class="empty">まだTAVがありません。「TAV」タブから、真似したいと思った気づきを書き留めてみましょう。</p></section>';
+  }
+
+  const rows = done.map((t) => {
+    const p = t.completedAt.split("-");
+    return '<details class="tvr"><summary>' +
+      '<span class="tvr-date">' + Number(p[1]) + '/' + Number(p[2]) + '</span>' +
+      '<span class="tvr-title">' + esc(t.title) + '</span></summary>' +
+      '<div class="tvr-body"><div class="tvr-q">やってみて</div><div class="tvr-a">' + esc(t.review) + '</div>' +
+      (t.memo ? '<div class="tvr-q">メモ</div><div class="tvr-a">' + esc(t.memo) + '</div>' : '') +
+      '</div></details>';
+  }).join("");
+
+  return '<section class="card"><h2 class="card-title">実行したTAV</h2>' +
+    '<p class="card-sub">気づきを実行に移した記録です。実行 ' + done.length + '件・実行中 ' + active + '件・見送り ' + skipped + '件。</p>' +
+    (done.length ? '<div class="tvr-list">' + rows + '</div>'
+      : '<p class="empty">まだ実行まで至ったTAVはありません。</p>') +
+    '</section>';
+}
+
+/* ---------- weather grid (振り返り) ---------- */
+function weatherGridHTML(kind, title) {
+  const year = appNow().getFullYear();
+  const today = appNow();
+  const count = { sun: 0, cloud: 0, rain: 0 };
+  let grid = "";
+  for (let m = 0; m < 12; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const v = journals[k] && journals[k][kind];
+      const future = dateFromKey(k) > today;
+      if (v) count[v] = (count[v] || 0) + 1;
+      const style = future ? "background:transparent;border:1px dashed rgba(25,28,34,.18)"
+        : v ? "background:" + WEATHER_COLOR[v] + ";border:1px solid transparent"
+        : "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+  const total = count.sun + count.cloud + count.rain;
+  if (total === 0) return "";
+  return '<div class="wg"><div class="wg-title">' + title +
+    '<span>晴れ ' + count.sun + '・曇り ' + count.cloud + '・雨 ' + count.rain + '</span></div>' +
+    '<div class="year-grid">' + grid + '</div></div>';
+}
+
+/* ---------- journal review (振り返りタブ) ---------- */
+function journalReviewHTML() {
+  const keys = Object.keys(journals).filter((k) => journals[k] && journals[k].savedAt).sort();
+  if (keys.length === 0) {
+    return '<section class="card"><h2 class="card-title">ジャーナルの記録</h2>' +
+      '<p class="empty">まだジャーナルがありません。「習慣」タブから、今日の一日を書き留めてみましょう。</p></section>';
+  }
+  const year = appNow().getFullYear();
+  const today = appNow();
+
+  // 年間グリッド（記録した日）
+  let grid = "";
+  for (let m = 0; m < 12; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const has = journals[k] && journals[k].savedAt;
+      const future = dateFromKey(k) > today;
+      const style = future ? "background:transparent;border:1px dashed rgba(25,28,34,.18)"
+        : has ? "background:#B08A3E;border:1px solid transparent"
+        : "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+
+  // 月別グループ（新しい順・全文表示）
+  const byMonth = {};
+  keys.forEach((k) => {
+    const ym = k.slice(0, 7);
+    (byMonth[ym] = byMonth[ym] || []).push(k);
+  });
+  const months = Object.keys(byMonth).sort().reverse();
+  const entries = months.map((ym) => {
+    const p = ym.split("-");
+    const rows = byMonth[ym].sort().reverse().map((k) => {
+      const e = journals[k];
+      const d = k.split("-");
+      const body = JOURNAL_QUESTIONS.map((q) =>
+        e[q.id] ? '<div class="jrv-q">' + q.label + '</div><div class="jrv-a">' + esc(e[q.id]) + '</div>' : ''
+      ).join("");
+      const stars = e.stars ? '<span class="jrv-stars">' + "★".repeat(e.stars) + '</span>' : '';
+      const wIco = (id) => id ? '<span class="jrv-w w-' + id + '">' + weatherSVG(id) + '</span>' : '';
+      const wSet = (e.mind || e.body) ? '<span class="jrv-ws">' + wIco(e.mind) + wIco(e.body) + '</span>' : '';
+      return '<details class="jrv"><summary><span class="jrv-date">' + Number(d[1]) + '/' + Number(d[2]) + '</span>' + stars +
+        '<span class="jrv-peek">' + esc((JOURNAL_QUESTIONS.map((q) => e[q.id]).filter(Boolean).join(" ／ ")).slice(0, 34)) + '…</span></summary>' +
+        '<div class="jrv-body">' + body + '</div></details>';
+    }).join("");
+    return '<div class="jrv-month"><div class="jrv-month-label">' + p[0] + '年' + Number(p[1]) + '月' +
+      '<span>' + byMonth[ym].length + '日</span></div>' + rows + '</div>';
+  }).join("");
+
+  return '<section class="card"><h2 class="card-title">ジャーナルの記録</h2>' +
+    '<p class="card-sub">金の点がジャーナルを書いた日です。累計 ' + keys.length + '日ぶんの記録があります。</p>' +
+    '<div class="year-grid">' + grid + '</div>' +
+    weatherGridHTML("mind", "心の天気") +
+    weatherGridHTML("body", "体の天気") +
+    '<div class="jrv-list">' + entries + '</div></section>';
+}
+
+/* ---------- journal card (習慣タブ内) ---------- */
+function journalCardHTML() {
+  const key = todayKey();
+  const j = journals[key] || {};
+  const saved = !!j.savedAt;
+  const fields = JOURNAL_QUESTIONS.map((q) =>
+    '<label class="fld-label">' + q.label + '</label>' +
+    '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
+  ).join("");
+  return '<section class="card' + (saved ? ' card-done' : '') + '">' +
+    '<h2 class="card-title">今日のジャーナル<span class="opt-tag">任意</span></h2>' +
+    '<div class="w-line">' + weatherRowHTML("mind", "心", j.mind) + weatherRowHTML("body", "体", j.body) + '</div>' +
+    fields +
+    '<label class="fld-label">この日の重要度</label>' +
+    '<div class="stars" id="jr-stars" data-val="' + (j.stars || 0) + '">' +
+      [1,2,3,4,5].map((n) =>
+        '<button class="star' + ((j.stars || 0) >= n ? ' on' : '') + '" data-star="' + n + '" aria-label="' + n + '段階">' +
+        '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/></svg></button>'
+      ).join("") +
+      '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
+    '</div>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<button class="btn-primary" id="jr-save">' + (saved ? '更新する' : '保存する') + '</button>' +
+    (saved ? '<p class="note" style="text-align:center;margin-bottom:0">保存済みです。</p>' : '') +
+    '</section>';
+}
+
+/* ---------- mini ring ---------- */
+function miniRingHTML() {
+  const now = appNow();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let monthDays = 0;
+  for (let i = 1; i <= dim; i++) {
+    const k = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    if (logs[k] && (logs[k].done || []).length > 0) monthDays++;
+  }
+  const progress = Math.min(1, monthDays / dim);
+  const R = 34, C = 2 * Math.PI * R;
+  const complete = allThreeDone();
+  const col = complete ? "#B08A3E" : "#28407A";
+  return '<div class="mini-ring' + (complete ? ' gold' : '') + '" id="mini-ring" data-progress="' + progress + '">' +
+    '<svg viewBox="0 0 80 80">' +
+    '<circle cx="40" cy="40" r="' + R + '" fill="none" stroke="rgba(40,64,122,.14)" stroke-width="5"/>' +
+    '<circle id="mr-arc" cx="40" cy="40" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + C.toFixed(1) + '"/>' +
+    '</svg><div class="mini-ring-txt">' + monthDays + '<small>/' + dim + '</small></div></div>';
+}
+
+function allThreeDone() {
+  const k = todayKey();
+  const posted = !!(logs[k] && logs[k].posted);
+  const jr = !!(journals[k] && journals[k].savedAt);
+  const tv = tavs.some((t) => t.completedAt === k || t.touchedAt === k);
+  return posted && jr && tv;
+}
+
+function animateMiniRing() {
+  const wrap = $("#mini-ring");
+  if (!wrap || ringAnimated) return;
+  ringAnimated = true;
+  const progress = parseFloat(wrap.dataset.progress) || 0;
+  const arc = $("#mr-arc");
+  const C = 2 * Math.PI * 34;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    arc.style.strokeDashoffset = C * (1 - progress); return;
+  }
+  const t0 = performance.now(), dur = 1100;
+  (function frame(t) {
+    const p = Math.min(((t || performance.now()) - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    arc.style.strokeDashoffset = C * (1 - progress * e);
+    if (p < 1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+/* ---------- journal view ---------- */
+function journalView() {
+  const key = todayKey();
+  const j = journals[key] || { q1: "", q2: "", q3: "", posted: false };
+  const d = appNow();
+  const wd = ["日","月","火","水","木","金","土"][d.getDay()];
+
+  const fields = JOURNAL_QUESTIONS.map((q) =>
+    '<label class="fld-label">' + q.label + '</label>' +
+    '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
+  ).join("");
+
+  const past = Object.keys(journals).filter((k) => k !== key).sort().reverse().slice(0, 30);
+  let history = "";
+  if (past.length) {
+    history = '<section class="card"><h2 class="card-title">これまでのジャーナル</h2>' +
+      past.map((k) => {
+        const e = journals[k];
+        const body = JOURNAL_QUESTIONS.map((q) => e[q.id]).filter(Boolean).join(" ／ ");
+        const p = k.split("-");
+        return '<div class="jr-past"><div class="jr-past-date">' + Number(p[1]) + '月' + Number(p[2]) + '日</div>' +
+          '<div class="jr-past-body">' + esc(body.length > 90 ? body.slice(0, 90) + "…" : body) + '</div></div>';
+      }).join("") + '</section>';
+  }
+
+  return '<main class="body">' +
+    '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
+    '<section class="card"><h2 class="card-title">今日のジャーナル</h2>' +
+    '<p class="card-sub">書ける問いだけで大丈夫です。記録はこの端末にのみ保存され、投稿しない限り誰にも共有されません。</p>' +
+    fields +
+    '<label class="fld-label">今日のジャーナルの重要度</label>' +
+    '<div class="stars" id="jr-stars" data-val="' + (j.stars || 0) + '">' +
+      [1,2,3,4,5].map((n) =>
+        '<button class="star' + ((j.stars || 0) >= n ? ' on' : '') + '" data-star="' + n + '" aria-label="' + n + '段階">' +
+        '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/></svg></button>'
+      ).join("") +
+      '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
+    '</div>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<button class="btn-primary" id="jr-save">保存する</button>' +
+    (j.savedAt ? '<p class="note" style="text-align:center">保存済みです。</p>' : '') +
+    '</section>' + history + '</main>';
+}
+
+/* ---------- TAV view ---------- */
+function tavStatus(t) {
+  if (t.decision === "no") return "no";
+  if (t.completedAt) return "done";
+  if (!t.decision) return "new";
+  if (t.due && dateFromKey(t.due) < dateFromKey(todayKey())) return "over";
+  return "plan";
+}
+const TAV_LABEL = { new: "未判定", plan: "予定", over: "期限切れ", done: "完了", no: "やらない" };
+const TAV_ORDER = { over: 0, plan: 1, new: 2, done: 3, no: 4 };
+
+function tavView() {
+  const list = tavs.map((t) => ({ t, s: tavStatus(t) }));
+  const counts = { active: list.filter((x) => ["over","plan","new"].includes(x.s)).length,
+                   done: list.filter((x) => x.s === "done").length,
+                   no: list.filter((x) => x.s === "no").length };
+  const shown = list.filter((x) =>
+    tavFilter === "active" ? ["over","plan","new"].includes(x.s) :
+    tavFilter === "done" ? x.s === "done" : x.s === "no"
+  ).sort((a, b) => {
+    if (TAV_ORDER[a.s] !== TAV_ORDER[b.s]) return TAV_ORDER[a.s] - TAV_ORDER[b.s];
+    return (a.t.due || "9999") < (b.t.due || "9999") ? -1 : 1;
+  });
+
+  let items = "";
+  if (shown.length === 0) {
+    items = '<p class="empty">' + (tavFilter === "active"
+      ? "まだ気づきがありません。月例会やふだんの会話で「これは真似したい」と思ったことを書き留めておきましょう。"
+      : "該当する気づきはまだありません。") + '</p>';
+  }
+  shown.forEach(({ t, s }) => {
+    const due = t.due ? (() => { const p = t.due.split("-"); return Number(p[1]) + "/" + Number(p[2]); })() : "";
+    let actions = "";
+    if (s === "new") {
+      actions = '<div class="tav-actions"><button class="btn-ghost sm" data-tav-do="' + t.id + '">やる（期日を決める）</button>' +
+        '<button class="btn-ghost sm" data-tav-skip="' + t.id + '">やらない</button></div>';
+    } else if (s === "plan" || s === "over") {
+      actions = '<div class="tav-actions"><button class="btn-ghost sm" data-tav-done="' + t.id + '">実行した</button>' +
+        '<button class="btn-ghost sm" data-tav-do="' + t.id + '">期日を変える</button>' +
+        '<button class="btn-ghost sm" data-tav-skip="' + t.id + '">やらない</button></div>';
+    } else if (s === "no") {
+      actions = '<div class="tav-actions"><button class="btn-ghost sm" data-tav-revive="' + t.id + '">やっぱりやる</button></div>';
+    } else if (s === "done" && !t.shared && webhookUrl()) {
+      actions = '<div class="tav-actions"><button class="btn-ghost sm" data-tav-share="' + t.id + '">Slackに共有する</button></div>';
+    }
+    items += '<div class="tav tav-' + s + '">' +
+      '<div class="tav-head"><span class="tav-badge b-' + s + '">' + TAV_LABEL[s] + '</span>' +
+      (due ? '<span class="tav-due">期日 ' + due + '</span>' : '') + '</div>' +
+      '<div class="tav-title">' + esc(t.title) + '</div>' +
+      (t.memo ? '<div class="tav-memo">' + esc(t.memo) + '</div>' : '') +
+      (t.review ? '<div class="tav-review"><span>やってみて</span>' + esc(t.review) + '</div>' : '') +
+      actions +
+      '<button class="tav-del" data-tav-del="' + t.id + '" aria-label="削除">×</button>' +
+      '</div>';
+  });
+
+  const chip = (k, label, n) =>
+    '<button class="chip' + (tavFilter === k ? " on" : "") + '" data-tavfilter="' + k + '">' + label + ' ' + n + '</button>';
+
+  return '<main class="body">' +
+    '<section class="card"><h2 class="card-title">TAVを書き留める</h2>' +
+    '<p class="card-sub">Takeaway Value — 人の話や日々の中で得た「これは真似したい」を、実行まで運ぶための場所です。</p>' +
+    '<input class="fld" id="tav-title" placeholder="例：面談ではまず相手の原体験を聞く">' +
+    '<textarea class="fld" id="tav-memo" placeholder="補足メモ（任意）"></textarea>' +
+    '<button class="btn-primary" id="tav-add">気づきを追加する</button></section>' +
+    '<section class="card"><div class="chips">' +
+      chip("active", "実行中・未判定", counts.active) + chip("done", "完了", counts.done) + chip("no", "やらない", counts.no) +
+    '</div>' + items + '</section></main>';
 }
 
 function recordView(stats) {
@@ -666,6 +1408,8 @@ function recordView(stats) {
     '<section class="card"><h2 class="card-title">習慣ごとの歩み</h2>' +
     '<p class="card-sub">直近28日の記録です。どの習慣が続いているかを個別に確認できます。</p>' +
     habitRows + '</section>' +
+    tavReviewHTML() +
+    journalReviewHTML() +
     '<section class="card"><h2 class="card-title">今月の記録カード</h2>' +
     '<p class="card-sub">この月のドットと成績を1枚の画像（1080×1080）にまとめます。Slackやインスタでの共有用に。</p>' +
     '<button class="btn-primary" id="dl-card">' + (appNow().getMonth() + 1) + '月の記録カードを保存する</button>' +
@@ -676,29 +1420,134 @@ function recordView(stats) {
 function settingsView() {
   const goalFields = profile.goals.map((g, i) =>
     '<textarea class="fld st-goal" placeholder="目標 ' + (i + 1) + '">' + esc(g) + '</textarea>').join("");
-  const habitFields = profile.habits.map((h) =>
-    '<input class="fld st-habit" value="' + esc(h.name) + '">').join("");
+
+  const habitRows = profile.habits.map((h, i) =>
+    '<div class="st-hrow" data-hid="' + h.id + '">' +
+      '<div class="st-hmove">' +
+        '<button class="st-mv" data-mv="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="上へ">▲</button>' +
+        '<button class="st-mv" data-mv="down" data-i="' + i + '"' + (i === profile.habits.length - 1 ? ' disabled' : '') + ' aria-label="下へ">▼</button>' +
+      '</div>' +
+      '<input class="fld st-habit" data-hid="' + h.id + '" value="' + esc(h.name) + '">' +
+      '<button class="st-hdel" data-hdel="' + h.id + '" aria-label="削除"' +
+        (profile.habits.length <= 1 ? ' disabled' : '') + '>×</button>' +
+    '</div>').join("");
+
   return '<main class="body">' +
     '<section class="card"><h2 class="card-title">一年の目標（1〜3個）</h2>' +
     '<div id="st-goals">' + goalFields + '</div>' +
     (profile.goals.length < 3 ? '<button class="btn-ghost" id="st-add-goal">＋ 目標を追加</button>' : "") +
     '<label class="fld-label">毎日の習慣（1〜5個）</label>' +
-    '<div id="st-habits">' + habitFields + '</div>' +
+    '<div id="st-habits">' + habitRows + '</div>' +
     (profile.habits.length < 5 ? '<button class="btn-ghost" id="st-add-habit">＋ 習慣を追加</button>' : "") +
     '<button class="btn-primary" id="st-save">保存する</button>' +
-    '<p class="note">習慣の並び順を変えると過去の記録との対応がずれるため、名称の修正は同じ行で行ってください。記録はこの端末のブラウザに保存されます。</p>' +
+    '<p class="note">▲▼で並び替え、×で削除できます。過去の記録は習慣ごとに保持されるため、並び替えても記録がずれることはありません。</p>' +
     '</section>' +
+
+    '<section class="card"><h2 class="card-title">記録のバックアップ</h2>' +
+    '<p class="card-sub">記録はこの端末のブラウザにのみ保存されています。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。</p>' +
+    '<button class="btn-ghost" id="st-export">記録を書き出す（ファイル保存）</button>' +
+    '<button class="btn-ghost" id="st-import" style="margin-bottom:0">書き出したファイルから復元する</button>' +
+    '<input type="file" id="st-file" accept="application/json,.json" style="display:none">' +
+    '</section>' +
+
     '<section class="card danger"><h2 class="card-title">記録帳をリセット</h2>' +
-    '<p class="card-sub">目標・習慣・毎日の記録がすべて消えます。元に戻せません。</p>' +
+    '<p class="card-sub">目標・習慣・毎日の記録・ジャーナル・TAVがすべて消えます。元に戻せません。</p>' +
     '<button class="btn-ghost" id="st-reset">リセットする…</button>' +
     '</section></main>';
 }
 
+/* ---------- settings helper ---------- */
+function collectSettings(validate) {
+  const goals = [...document.querySelectorAll(".st-goal")].map((e) => e.value.trim()).filter(Boolean);
+  const named = [...document.querySelectorAll(".st-habit")].map((e) => ({ id: e.dataset.hid, name: e.value.trim() }));
+  if (validate) {
+    if (goals.length === 0) { showToast("目標を1つ以上入力してください"); return false; }
+    if (named.filter((h) => h.name).length === 0) { showToast("習慣を1つ以上入力してください"); return false; }
+  }
+  if (goals.length) profile.goals = goals.slice(0, 3);
+  // 空欄の習慣は保存時のみ除外（編集途中は保持）
+  profile.habits = validate ? named.filter((h) => h.name) : named;
+  return true;
+}
+
+/* ---------- backup ---------- */
+function exportData() {
+  const payload = {
+    app: "daily-circle", version: 1, exportedAt: new Date().toISOString(),
+    profile, logs, journals, tavs,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "daily-circle-backup-" + todayKey() + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast("記録を書き出しました");
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let d;
+    try { d = JSON.parse(reader.result); } catch (e) { showToast("ファイルを読み込めませんでした"); return; }
+    if (!d || d.app !== "daily-circle" || !d.profile) { showToast("Daily Circleのバックアップではありません"); return; }
+    const days = Object.keys(d.logs || {}).length;
+    openModal({
+      title: "この内容で復元しますか？",
+      body: '<p class="card-sub">' + esc(d.profile.name || "") + ' さんの記録（習慣 ' + days + '日ぶん・ジャーナル ' +
+        Object.keys(d.journals || {}).length + '件・TAV ' + (d.tavs || []).length + '件）<br><br>' +
+        '<strong>現在この端末にある記録は上書きされます。</strong></p>',
+      okLabel: "復元する",
+      danger: true,
+      onOk: () => {
+        profile = normalizeProfile(d.profile);
+        logs = d.logs || {};
+        journals = d.journals || {};
+        tavs = d.tavs || [];
+        persist();
+        overlay = null; tab = "habit"; ringAnimated = false;
+        render();
+        showToast("記録を復元しました");
+      },
+    });
+  };
+  reader.readAsText(file);
+}
+
+function normalizeProfile(p) {
+  if (!p) return p;
+  const goals = p.goals || (p.goal ? [p.goal] : []);
+  const habits = (p.habits || p.actions || []).map((h, i) =>
+    typeof h === "string" ? { id: "a" + i, name: h } : h);
+  return Object.assign({}, p, { goals, habits });
+}
+
 function tabsView() {
-  const items = [["today","今日"],["record","記録"],["settings","設定"]];
-  return '<nav class="tabs">' + items.map(([k, label]) =>
-    '<button class="tab' + (tab === k ? " on" : "") + '" data-tab="' + k + '">' + label + '</button>'
+  const k = todayKey();
+  const habitDot = !(logs[k] && logs[k].posted) || !(journals[k] && journals[k].savedAt);
+  const tavCount = tavs.filter((t) => {
+    const s = tavStatus(t);
+    return s === "over" || (s === "plan" && t.due === k);
+  }).length;
+
+  const items = [
+    ["habit", "習慣", habitDot ? "dot" : "", ""],
+    ["tav", "TAV", "", tavCount ? String(tavCount) : ""],
+    ["review", "振り返り", "", ""],
+  ];
+  return '<nav class="tabs">' + items.map(([key, label, dot, badge]) =>
+    '<button class="tab' + (tab === key ? " on" : "") + '" data-tab="' + key + '">' + label +
+    (badge ? '<span class="tab-badge">' + badge + '</span>' : (dot ? '<span class="tab-dot"></span>' : '')) +
+    '</button>'
   ).join("") + '</nav>';
+}
+
+/* ---------- overlay (review / settings) ---------- */
+function overlayView(stats) {
+  const title = "設定";
+  const inner = settingsView();
+  return '<div class="ov"><div class="ov-bar"><button class="ov-back" id="ov-close">←</button>' +
+    '<span class="ov-title">' + title + '</span></div>' + inner + '</div>';
 }
 
 /* ---------- render & bind ---------- */
@@ -706,10 +1555,15 @@ function render() {
   const app = $("#app");
   if (!profile) { app.innerHTML = onbView(); bindOnb(); return; }
   const stats = computeStats();
+  if (overlay) {
+    app.innerHTML = overlayView(stats);
+    bindApp();
+    return;
+  }
   let body = "";
-  if (tab === "today") body = todayView();
-  else if (tab === "record") body = recordView(stats);
-  else body = settingsView();
+  if (tab === "habit") body = habitView();
+  else if (tab === "tav") body = tavView();
+  else body = recordView(stats);
   app.innerHTML = headerView(stats) + body + tabsView();
   bindApp();
 }
@@ -749,11 +1603,69 @@ function bindOnb() {
 }
 
 function bindApp() {
-  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; render(); }));
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; editYesterday = false; render(); }));
+
+  // header menu
+  const mb = $("#menu-btn");
+  if (mb) mb.onclick = (e) => { e.stopPropagation(); menuOpen = !menuOpen; render(); };
+  document.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => {
+    overlay = b.dataset.open; menuOpen = false; ringAnimated = false; render();
+  }));
+  if (menuOpen) document.onclick = () => { menuOpen = false; document.onclick = null; render(); };
+  const ovc = $("#ov-close");
+  if (ovc) ovc.onclick = () => { overlay = null; ringAnimated = false; render(); };
+
+  // journal
+  const js = $("#jr-save");
+  if (js) js.onclick = saveJournal;
+  document.querySelectorAll("[data-weather]").forEach((el) => {
+    entry[el.dataset.weather] = el.dataset.val || "";
+    if (el.dataset.val) any = true;
+  });
+  document.querySelectorAll("[data-weather]").forEach((box) => {
+    box.querySelectorAll(".w-opt").forEach((b) => (b.onclick = () => {
+      const v = b.dataset.w;
+      const next = box.dataset.val === v ? "" : v;   // 同じものを再タップで解除
+      box.dataset.val = next;
+      box.querySelectorAll(".w-opt").forEach((x) => x.classList.toggle("on", x.dataset.w === next));
+    }));
+  });
+  const starBox = $("#jr-stars");
+  if (starBox) {
+    const paint = (v) => {
+      starBox.dataset.val = v;
+      starBox.querySelectorAll(".star").forEach((s) =>
+        s.classList.toggle("on", Number(s.dataset.star) <= v));
+      const cl = $("#jr-star-clear");
+      if (cl) cl.textContent = v ? "クリア" : "";
+    };
+    starBox.querySelectorAll(".star").forEach((s) =>
+      (s.onclick = () => paint(Number(s.dataset.star))));
+    const cl = $("#jr-star-clear");
+    if (cl) cl.onclick = () => paint(0);
+  }
+
+  // TAV
+  const ta = $("#tav-add");
+  if (ta) ta.onclick = addTav;
+  document.querySelectorAll("[data-tavfilter]").forEach((b) => (b.onclick = () => { tavFilter = b.dataset.tavfilter; render(); }));
+  document.querySelectorAll("[data-tav-do]").forEach((b) => (b.onclick = () => tavSetDue(b.dataset.tavDo)));
+  document.querySelectorAll("[data-tav-done]").forEach((b) => (b.onclick = () => tavComplete(b.dataset.tavDone)));
+  document.querySelectorAll("[data-tav-skip]").forEach((b) => (b.onclick = () => tavSkip(b.dataset.tavSkip)));
+  document.querySelectorAll("[data-tav-share]").forEach((b) => (b.onclick = () => tavShare(b.dataset.tavShare)));
+  document.querySelectorAll("[data-tav-revive]").forEach((b) => (b.onclick = () => tavRevive(b.dataset.tavRevive)));
+  document.querySelectorAll("[data-tav-del]").forEach((b) => (b.onclick = () => tavDelete(b.dataset.tavDel)));
+
   document.querySelectorAll(".action-row").forEach((b) => (b.onclick = () => toggleHabit(b.dataset.habit)));
   const post = $("#post-today");
   if (post) post.onclick = postToday;
   if ($("#year-ring")) animateYearRing();
+  if ($("#mini-ring")) animateMiniRing();
+  document.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => {
+    editYesterday = b.dataset.day === "yesterday";
+    ringAnimated = false; render();
+  }));
+  document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { tab = b.dataset.goto; ringAnimated = false; render(); }));
   const dl = $("#dl-card");
   if (dl) dl.onclick = generateCard;
 
@@ -768,20 +1680,45 @@ function bindApp() {
   };
   const addHabit = $("#st-add-habit");
   if (addHabit) addHabit.onclick = () => {
-    const box = $("#st-habits");
-    if (box.children.length >= 5) return;
-    const t = document.createElement("input");
-    t.className = "fld st-habit";
-    box.appendChild(t);
-    if (box.children.length >= 5) addHabit.style.display = "none";
+    if (profile.habits.length >= 5) return;
+    collectSettings();
+    profile.habits.push({ id: uid(), name: "" });
+    persist(); render();
   };
+  document.querySelectorAll("[data-mv]").forEach((b) => (b.onclick = () => {
+    collectSettings();
+    const i = Number(b.dataset.i), j = b.dataset.mv === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= profile.habits.length) return;
+    const t = profile.habits[i]; profile.habits[i] = profile.habits[j]; profile.habits[j] = t;
+    persist(); render();
+  }));
+  document.querySelectorAll("[data-hdel]").forEach((b) => (b.onclick = () => {
+    if (profile.habits.length <= 1) return;
+    const id = b.dataset.hdel;
+    const h = profile.habits.find((x) => x.id === id);
+    openModal({
+      title: "この習慣を削除しますか？",
+      body: '<p class="card-sub">「' + esc(h ? h.name : "") + '」を一覧から外します。過去の記録は残りますが、今後の記録対象ではなくなります。</p>',
+      okLabel: "削除する", danger: true,
+      onOk: () => {
+        collectSettings();
+        profile.habits = profile.habits.filter((x) => x.id !== id);
+        persist(); render(); showToast("習慣を削除しました");
+      },
+    });
+  }));
+
+  const exp = $("#st-export");
+  if (exp) exp.onclick = exportData;
+  const imp = $("#st-import"), file = $("#st-file");
+  if (imp && file) {
+    imp.onclick = () => file.click();
+    file.onchange = () => { if (file.files && file.files[0]) importData(file.files[0]); file.value = ""; };
+  }
+
   const save = $("#st-save");
   if (save) save.onclick = () => {
-    const goals = [...document.querySelectorAll(".st-goal")].map((e) => e.value.trim()).filter(Boolean);
-    const habits = [...document.querySelectorAll(".st-habit")].map((e) => e.value.trim()).filter(Boolean);
-    if (goals.length === 0 || habits.length === 0) { showToast("目標と習慣を1つ以上入力してください"); return; }
-    profile.goals = goals.slice(0, 3);
-    profile.habits = habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n }));
+    if (!collectSettings(true)) return;
     persist();
     showToast("保存しました");
     render();
@@ -789,9 +1726,8 @@ function bindApp() {
   const reset = $("#st-reset");
   if (reset) reset.onclick = () => {
     if (reset.dataset.armed) {
-      localStorage.removeItem("circle_profile");
-      localStorage.removeItem("circle_logs");
-      profile = null; logs = {}; tab = "today";
+      ["circle_profile","circle_logs","circle_journals","circle_tavs"].forEach((k) => localStorage.removeItem(k));
+      profile = null; logs = {}; journals = {}; tavs = []; tab = "habit"; overlay = null;
       render();
     } else {
       reset.dataset.armed = "1";
