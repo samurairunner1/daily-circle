@@ -400,6 +400,11 @@ function persist() {
   localStorage.setItem("circle_journals", JSON.stringify(journals));
   localStorage.setItem("circle_tavs", JSON.stringify(tavs));
 }
+const prefersReduced = () => {
+  try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch (e) { return false; }
+};
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ---------- state ---------- */
@@ -548,7 +553,7 @@ function animateYearRing() {
     head.setAttribute("cx", 150 + Math.cos(a) * R);
     head.setAttribute("cy", 150 + Math.sin(a) * R);
   };
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAt(progress); return; }
+  if (prefersReduced()) { setAt(progress); return; }
   const t0 = performance.now(), dur = 1600;
   function frame(t) {
     const p = Math.min((t - t0) / dur, 1);
@@ -1228,7 +1233,7 @@ function animateMiniRing() {
   const progress = parseFloat(wrap.dataset.progress) || 0;
   const arc = $("#mr-arc");
   const C = 2 * Math.PI * 34;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (prefersReduced()) {
     arc.style.strokeDashoffset = C * (1 - progress); return;
   }
   const t0 = performance.now(), dur = 1100;
@@ -1603,6 +1608,7 @@ function bindOnb() {
 }
 
 function bindApp() {
+  try {
   document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; editYesterday = false; render(); }));
 
   // header menu
@@ -1618,10 +1624,6 @@ function bindApp() {
   // journal
   const js = $("#jr-save");
   if (js) js.onclick = saveJournal;
-  document.querySelectorAll("[data-weather]").forEach((el) => {
-    entry[el.dataset.weather] = el.dataset.val || "";
-    if (el.dataset.val) any = true;
-  });
   document.querySelectorAll("[data-weather]").forEach((box) => {
     box.querySelectorAll(".w-opt").forEach((b) => (b.onclick = () => {
       const v = b.dataset.w;
@@ -1668,6 +1670,7 @@ function bindApp() {
   document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { tab = b.dataset.goto; ringAnimated = false; render(); }));
   const dl = $("#dl-card");
   if (dl) dl.onclick = generateCard;
+  } catch (e) { console.error("bindApp:", e); }
 
   const addGoal = $("#st-add-goal");
   if (addGoal) addGoal.onclick = () => {
