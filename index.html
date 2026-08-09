@@ -15,12 +15,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+/* ===== iOS Safari 対策 ===== */
+html{-webkit-text-size-adjust:100%}
+*{-webkit-tap-highlight-color:rgba(40,64,122,.12)}
+button,input,textarea,select{
+  -webkit-appearance:none;appearance:none;
+  touch-action:manipulation;          /* ダブルタップズーム遅延を除去 */
+  font-size:16px;                     /* 16px未満だとiOSが自動ズームする */
+}
+button{touch-action:manipulation;cursor:pointer;-webkit-user-select:none;user-select:none}
+button svg{pointer-events:none}       /* SVGがタップ判定を奪わないように */
+.w-opt span,.action-name,.tab{pointer-events:none}
+.tab{pointer-events:auto}
+input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox}
+
+/* メニュー背面（外側タップで閉じる） */
+.menu-backdrop{position:fixed;inset:0;z-index:55;background:transparent}
+
+
 body{
   min-height:100vh;background:#F7F4EE;color:#191C22;
   font-family:'Zen Kaku Gothic New',-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;
   -webkit-font-smoothing:antialiased;
 }
-#app{max-width:520px;margin:0 auto;padding-bottom:96px;min-height:100vh}
+#app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
 .center-msg{padding:80px 20px;text-align:center;color:#4A4E58;letter-spacing:.12em}
 
 /* header */
@@ -135,11 +153,11 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   width:100%;max-width:520px;display:flex;background:rgba(247,244,238,.96);
   backdrop-filter:blur(4px);
-  border-top:1px solid rgba(25,28,34,.14);padding:6px 8px calc(8px + env(safe-area-inset-bottom));z-index:40;
+  border-top:1px solid rgba(25,28,34,.14);padding:6px 8px calc(10px + env(safe-area-inset-bottom,0px));z-index:40;
 }
 .tab{
   flex:1;background:transparent;border:none;font-family:'Shippori Mincho B1',serif;
-  font-weight:700;font-size:14px;letter-spacing:.2em;color:#4A4E58;padding:13px 4px;cursor:pointer;
+  font-weight:700;font-size:14px;letter-spacing:.2em;color:#4A4E58;padding:15px 4px;cursor:pointer;min-height:48px;
   position:relative;transition:color .3s;
 }
 .tab.on{color:#28407A}
@@ -150,7 +168,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .toast{
   position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
   background:#1B2C58;color:#F7F4EE;padding:10px 20px;border-radius:999px;
-  font-size:12.5px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(27,44,88,.28);z-index:50;white-space:nowrap;
+  font-size:12.5px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(27,44,88,.28);z-index:50;white-space:nowrap;pointer-events:none;
   max-width:90vw;overflow:hidden;text-overflow:ellipsis;
 }
 
@@ -210,7 +228,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 
 /* v3: journal stars */
 .stars{display:flex;align-items:center;gap:5px;margin:2px 0 16px}
-.star{width:34px;height:34px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.star{width:40px;height:40px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .star svg{width:26px;height:26px;fill:none;stroke:rgba(40,64,122,.35);stroke-width:1.6;transition:all .18s ease}
 .star.on svg{fill:#B08A3E;stroke:#B08A3E}
 .star:hover svg{stroke:#B08A3E}
@@ -224,7 +242,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .w-opts{display:flex;gap:6px;flex:1}
 .w-opt{
   flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px 4px;border:1px solid rgba(25,28,34,.16);border-radius:2px;
+  padding:13px 4px;min-height:46px;border:1px solid rgba(25,28,34,.16);border-radius:2px;
   background:#fff;cursor:pointer;transition:all .18s ease;font-family:inherit;
 }
 .w-opt svg{width:22px;height:22px;flex-shrink:0}
@@ -430,8 +448,8 @@ const WEATHER = [
 const WEATHER_COLOR = { sun: "#28407A", cloud: "rgba(40,64,122,.42)", rain: "rgba(40,64,122,.16)" };
 
 const JOURNAL_QUESTIONS = [
-  { id: "q1", label: "今日、心が動いたのはどんな場面だった？" },
-  { id: "q2", label: "そのとき、どんな感情だった？" },
+  { id: "q1", label: "今日、どんな出来事があって、どんな感情になった？" },
+  { id: "q2", label: "なぜ、そんな感情になった？" },
   { id: "q3", label: "明日、ひとつだけ変えるとしたら？" },
 ];
 
@@ -948,7 +966,7 @@ function headerView(stats) {
       '<button class="menu-btn" id="menu-btn" aria-label="メニュー">' +
         '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="#191C22" stroke-width="1.8" stroke-linecap="round"/></svg>' +
       '</button>' +
-      (menuOpen ? '<div class="menu-pop"><button class="menu-item" data-open="settings">設定</button></div>' : '') +
+      (menuOpen ? '<div class="menu-backdrop" id="menu-backdrop"></div><div class="menu-pop"><button class="menu-item" data-open="settings">設定</button></div>' : '') +
     '</div>' +
   '</header>';
 }
@@ -1617,7 +1635,8 @@ function bindApp() {
   document.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => {
     overlay = b.dataset.open; menuOpen = false; ringAnimated = false; render();
   }));
-  if (menuOpen) document.onclick = () => { menuOpen = false; document.onclick = null; render(); };
+  const mbd = $("#menu-backdrop");
+  if (mbd) mbd.onclick = () => { menuOpen = false; render(); };
   const ovc = $("#ov-close");
   if (ovc) ovc.onclick = () => { overlay = null; ringAnimated = false; render(); };
 
