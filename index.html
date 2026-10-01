@@ -5,10 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Daily Circle — 日々の記録帳</title>
 <meta name="description" content="Daily Circle — Circleの一年目標を、毎日の習慣でつなぐ記録帳。">
-<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+<link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#F7F4EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Daily Circle">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -296,6 +304,13 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .st-hdel:hover:not(:disabled){color:#7A2828}
 .st-hdel:disabled{opacity:.2;cursor:default}
 
+/* sync badge */
+.sync-badge{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;transition:background .3s}
+.sync-badge.s-off{background:rgba(25,28,34,.2)}
+.sync-badge.s-ready,.sync-badge.s-syncing{background:#B08A3E}
+.sync-badge.s-saved{background:#28407A}
+.sync-badge.s-error{background:#7A2828}
+
 /* header menu */
 .top-right{display:flex;align-items:center;gap:8px;position:relative}
 .menu-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(25,28,34,.16);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
@@ -373,6 +388,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .celebrate-close{font-size:10.5px;color:#4A4E58;letter-spacing:.2em;margin-top:24px}
 @media (prefers-reduced-motion: reduce){ .stamp,.tab{transition:none} }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -391,6 +407,13 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBCRlhTNEhOOFovRUdDU1Vzc3gzRVJwaWJkcEdJTTM2bU1H";
 
 const SLACK_WEBHOOK = SLACK_WEBHOOK_B64 ? atob(SLACK_WEBHOOK_B64) : "";
+
+/* =========================================================
+   ★ 同期設定（Supabase）
+   空のままなら、これまで通り「この端末だけ」で動作します。
+========================================================= */
+const SUPABASE_URL = "https://aoxncdpmggfxzcwlvuxy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveG5jZHBtZ2dmeHpjd2x2dXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NjA2ODQsImV4cCI6MjEwNjIzNjY4NH0.0Hik_nr12mgE93tAB16FqpMoK7GKO4ss6B9UYBxtGsw";
 
 /* ---------- helpers ---------- */
 const $ = (sel) => document.querySelector(sel);
@@ -412,11 +435,15 @@ const daysBetween = (a, b) => Math.floor((b - a) / 86400000);
 function load(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
-function persist() {
+function persistLocal() {
   localStorage.setItem("circle_profile", JSON.stringify(profile));
   localStorage.setItem("circle_logs", JSON.stringify(logs));
   localStorage.setItem("circle_journals", JSON.stringify(journals));
   localStorage.setItem("circle_tavs", JSON.stringify(tavs));
+}
+function persist() {
+  persistLocal();
+  try { schedulePush(); } catch (e) {}
 }
 const prefersReduced = () => {
   try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
@@ -962,6 +989,7 @@ function headerView(stats) {
     '<div class="brand"><span class="brand-mark">' + RING + '</span>' +
     '<div><div class="brand-name">Daily Circle</div><div class="brand-sub">' + esc(profile.name) + ' さんの一年の記録</div></div></div>' +
     '<div class="top-right">' +
+      (signedIn() ? '<span class="sync-badge s-' + syncState + '" id="sync-badge" title="' + syncLabel() + '"></span>' : '') +
       '<div class="streak-pill"><span class="streak-num">' + stats.streak + '</span><span class="streak-label">日連続</span></div>' +
       '<button class="menu-btn" id="menu-btn" aria-label="メニュー">' +
         '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="#191C22" stroke-width="1.8" stroke-linecap="round"/></svg>' +
@@ -1466,6 +1494,14 @@ function settingsView() {
     '<p class="note">▲▼で並び替え、×で削除できます。過去の記録は習慣ごとに保持されるため、並び替えても記録がずれることはありません。</p>' +
     '</section>' +
 
+    (cloudEnabled() ? '<section class="card"><h2 class="card-title">アカウント</h2>' +
+      (signedIn()
+        ? '<p class="card-sub">' + esc(session.user.email) + '<br><span id="sync-text">' + syncLabel() + '</span></p>' +
+          '<p class="note" style="margin-top:0">記録はクラウドに保存され、スマートフォンとパソコンで同じ内容が見られます。</p>' +
+          '<button class="btn-ghost" id="st-signout" style="margin-bottom:0">ログアウト</button>'
+        : '<p class="card-sub">現在この端末だけに記録しています。ログインすると、他の端末とも同じ記録を見られます。</p>' +
+          '<button class="btn-ghost" id="st-signin" style="margin-bottom:0">ログインする</button>') +
+      '</section>' : '') +
     '<section class="card"><h2 class="card-title">記録のバックアップ</h2>' +
     '<p class="card-sub">記録はこの端末のブラウザにのみ保存されています。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。</p>' +
     '<button class="btn-ghost" id="st-export">記録を書き出す（ファイル保存）</button>' +
@@ -1477,6 +1513,162 @@ function settingsView() {
     '<p class="card-sub">目標・習慣・毎日の記録・ジャーナル・TAVがすべて消えます。元に戻せません。</p>' +
     '<button class="btn-ghost" id="st-reset">リセットする…</button>' +
     '</section></main>';
+}
+
+
+/* =========================================================
+   クラウド同期
+========================================================= */
+let sb = null;              // Supabaseクライアント
+let session = null;         // ログインセッション
+let syncState = "off";      // off | ready | syncing | saved | error
+let pushTimer = null;
+let localOnly = localStorage.getItem("circle_local_only") === "1";
+
+function cloudEnabled() { return !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase); }
+function signedIn() { return !!(sb && session); }
+
+async function initCloud() {
+  if (!cloudEnabled()) return;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+    const { data } = await sb.auth.getSession();
+    session = data ? data.session : null;
+    sb.auth.onAuthStateChange((_e, s) => {
+      const was = !!session;
+      session = s;
+      if (!was && s) { pullAndMerge(); }
+      if (was && !s) { syncState = "off"; render(); }
+    });
+    if (session) { syncState = "ready"; await pullAndMerge(); }
+  } catch (e) { console.error("initCloud", e); }
+}
+
+async function sendMagicLink(email) {
+  if (!sb) return { ok: false, msg: "同期が設定されていません" };
+  const { error } = await sb.auth.signInWithOtp({
+    email: email.trim(),
+    options: { emailRedirectTo: location.href.split("#")[0] },
+  });
+  if (error) {
+    const m = (error.message || "").toLowerCase();
+    if (m.includes("not allowed") || m.includes("signups")) return { ok: false, msg: "このメールアドレスは登録されていません" };
+    if (m.includes("rate")) return { ok: false, msg: "送信が集中しています。少し待って再度お試しください" };
+    return { ok: false, msg: "送信に失敗しました" };
+  }
+  return { ok: true };
+}
+
+async function signOutCloud() {
+  if (!sb) return;
+  await sb.auth.signOut();
+  session = null; syncState = "off";
+  showToast("ログアウトしました");
+  render();
+}
+
+/* --- マージ：日付キーは和集合、内容は新しい方（updated基準はクラウド優先） --- */
+function mergeAll(cloud) {
+  if (!cloud) return false;
+  let changed = false;
+  // profile：クラウド側に中身があれば採用（ローカルが空のときのみ上書きしない）
+  if (cloud.profile && cloud.profile.name) {
+    if (!profile || !profile.name) { profile = normalizeProfile(cloud.profile); changed = true; }
+    else {
+      const merged = normalizeProfile(cloud.profile);
+      // 習慣・目標はクラウドを正とする（最後に保存した端末の設定）
+      profile = Object.assign({}, profile, merged);
+      changed = true;
+    }
+  }
+  const mergeMap = (local, remote) => {
+    const out = Object.assign({}, remote || {});
+    Object.keys(local || {}).forEach((k) => {
+      if (!out[k]) { out[k] = local[k]; return; }
+      const a = local[k], b = out[k];
+      const doneA = (a.done || []).length, doneB = (b.done || []).length;
+      const savedA = a.savedAt || 0, savedB = b.savedAt || 0;
+      if (savedA || savedB) { if (savedA > savedB) out[k] = a; }
+      else if (doneA > doneB) out[k] = a;
+    });
+    return out;
+  };
+  const nl = mergeMap(logs, cloud.logs);
+  const nj = mergeMap(journals, cloud.journals);
+  if (JSON.stringify(nl) !== JSON.stringify(logs)) { logs = nl; changed = true; }
+  if (JSON.stringify(nj) !== JSON.stringify(journals)) { journals = nj; changed = true; }
+
+  const byId = {};
+  (cloud.tavs || []).forEach((t) => (byId[t.id] = t));
+  (tavs || []).forEach((t) => { if (!byId[t.id]) byId[t.id] = t; });
+  const nt = Object.values(byId);
+  if (JSON.stringify(nt) !== JSON.stringify(tavs)) { tavs = nt; changed = true; }
+  return changed;
+}
+
+async function pullAndMerge() {
+  if (!signedIn()) return;
+  syncState = "syncing"; render();
+  try {
+    const { data, error } = await sb.from("circle_data").select("*").eq("user_id", session.user.id).maybeSingle();
+    if (error) throw error;
+    if (data) mergeAll(data);
+    persistLocal();
+    await pushNow();            // マージ結果を書き戻す
+    syncState = "saved";
+  } catch (e) {
+    console.error("pull", e);
+    syncState = "error";
+  }
+  render();
+}
+
+async function pushNow() {
+  if (!signedIn()) return;
+  try {
+    const { error } = await sb.from("circle_data").upsert({
+      user_id: session.user.id,
+      profile: profile || {}, logs, journals, tavs,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    if (error) throw error;
+    syncState = "saved";
+  } catch (e) { console.error("push", e); syncState = "error"; }
+}
+
+function schedulePush() {
+  if (!signedIn()) return;
+  syncState = "syncing";
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => { await pushNow(); renderSyncBadge(); }, 1200);
+}
+
+function renderSyncBadge() {
+  const el = document.getElementById("sync-badge");
+  if (el) el.className = "sync-badge s-" + syncState;
+  const t = document.getElementById("sync-text");
+  if (t) t.textContent = syncLabel();
+}
+function syncLabel() {
+  return { off: "この端末のみ", ready: "同期中", syncing: "保存中…", saved: "同期済み", error: "同期エラー" }[syncState] || "";
+}
+
+/* ---------- login screen ---------- */
+function loginView() {
+  return '<div class="onb">' +
+    '<div class="onb-mark">' + RING + '</div>' +
+    '<h1 class="onb-title">Daily Circle</h1>' +
+    '<div class="onb-tate">日々の記録帳</div>' +
+    '<p class="onb-lead">メールアドレスを入力すると、ログイン用のリンクが届きます。パスワードは不要です。ログインすると、スマートフォンとパソコンで同じ記録を見られます。</p>' +
+    '<div class="onb-card">' +
+      '<label class="fld-label">メールアドレス</label>' +
+      '<input class="fld" id="lg-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">' +
+      '<button class="btn-primary" id="lg-send">ログインリンクを送る</button>' +
+      '<p class="note" id="lg-msg">Circleに登録されているアドレスのみログインできます。</p>' +
+      '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+    '</div></div>';
 }
 
 /* ---------- settings helper ---------- */
@@ -1573,9 +1765,38 @@ function overlayView(stats) {
     '<span class="ov-title">' + title + '</span></div>' + inner + '</div>';
 }
 
+
+function bindLogin() {
+  const send = $("#lg-send"), email = $("#lg-email"), msg = $("#lg-msg");
+  if (send) send.onclick = async () => {
+    const v = (email.value || "").trim();
+    if (!v || v.indexOf("@") < 0) { msg.textContent = "メールアドレスを入力してください"; return; }
+    send.disabled = true; msg.textContent = "送信中…";
+    const r = await sendMagicLink(v);
+    if (r.ok) {
+      msg.innerHTML = "<strong>" + esc(v) + " にリンクを送りました。</strong><br>メールを開いてリンクをタップしてください。届かない場合は迷惑メールもご確認ください。";
+      send.textContent = "もう一度送る";
+    } else { msg.textContent = r.msg; }
+    send.disabled = false;
+  };
+  if (email) email.onkeydown = (e) => { if (e.key === "Enter") send.click(); };
+  const lo = $("#lg-local");
+  if (lo) lo.onclick = () => {
+    localOnly = true;
+    localStorage.setItem("circle_local_only", "1");
+    render();
+  };
+}
+
 /* ---------- render & bind ---------- */
 function render() {
   const app = $("#app");
+  // 同期が有効かつ未ログイン、かつ「この端末だけ」を選んでいない場合はログイン画面
+  if (cloudEnabled() && !signedIn() && !localOnly) {
+    app.innerHTML = loginView();
+    bindLogin();
+    return;
+  }
   if (!profile) { app.innerHTML = onbView(); bindOnb(); return; }
   const stats = computeStats();
   if (overlay) {
@@ -1730,6 +1951,16 @@ function bindApp() {
     });
   }));
 
+  const so = $("#st-signout");
+  if (so) so.onclick = signOutCloud;
+  const si = $("#st-signin");
+  if (si) si.onclick = () => {
+    localOnly = false;
+    localStorage.removeItem("circle_local_only");
+    overlay = null;
+    render();
+  };
+
   const exp = $("#st-export");
   if (exp) exp.onclick = exportData;
   const imp = $("#st-import"), file = $("#st-file");
@@ -1760,6 +1991,7 @@ function bindApp() {
 }
 
 render();
+initCloud().then(() => render());
 </script>
 </body>
 </html>
