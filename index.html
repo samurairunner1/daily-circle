@@ -304,6 +304,8 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .st-hdel:hover:not(:disabled){color:#7A2828}
 .st-hdel:disabled{opacity:.2;cursor:default}
 
+.sync-err{font-size:11.5px;color:#7A2828;line-height:1.85;background:rgba(122,40,40,.06);border:1px solid rgba(122,40,40,.25);border-radius:2px;padding:9px 11px;margin-bottom:10px;word-break:break-word}
+
 /* sync badge */
 .sync-badge{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;transition:background .3s}
 .sync-badge.s-off{background:rgba(25,28,34,.2)}
@@ -1497,13 +1499,18 @@ function settingsView() {
     (cloudEnabled() ? '<section class="card"><h2 class="card-title">アカウント</h2>' +
       (signedIn()
         ? '<p class="card-sub">' + esc(session.user.email) + '<br><span id="sync-text">' + syncLabel() + '</span></p>' +
+          (syncState === "error" && syncError
+            ? '<p class="sync-err">同期できませんでした。<br>' + esc(syncError) + '</p>' : '') +
           '<p class="note" style="margin-top:0">記録はクラウドに保存され、スマートフォンとパソコンで同じ内容が見られます。</p>' +
+          '<button class="btn-primary" id="st-sync">今すぐ同期する</button>' +
           '<button class="btn-ghost" id="st-signout" style="margin-bottom:0">ログアウト</button>'
         : '<p class="card-sub">現在この端末だけに記録しています。ログインすると、他の端末とも同じ記録を見られます。</p>' +
           '<button class="btn-ghost" id="st-signin" style="margin-bottom:0">ログインする</button>') +
       '</section>' : '') +
     '<section class="card"><h2 class="card-title">記録のバックアップ</h2>' +
-    '<p class="card-sub">記録はこの端末のブラウザにのみ保存されています。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。</p>' +
+    '<p class="card-sub">' + (signedIn()
+      ? 'クラウドに保存されていますが、念のため手元にも控えておくと安心です。'
+      : '記録はこの端末のブラウザにのみ保存されています。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。') + '</p>' +
     '<button class="btn-ghost" id="st-export">記録を書き出す（ファイル保存）</button>' +
     '<button class="btn-ghost" id="st-import" style="margin-bottom:0">書き出したファイルから復元する</button>' +
     '<input type="file" id="st-file" accept="application/json,.json" style="display:none">' +
@@ -1522,6 +1529,7 @@ function settingsView() {
 let sb = null;              // Supabaseクライアント
 let session = null;         // ログインセッション
 let syncState = "off";      // off | ready | syncing | saved | error
+let syncError = "";         // 直近の同期エラー内容
 let pushTimer = null;
 let localOnly = localStorage.getItem("circle_local_only") === "1";
 
@@ -1617,10 +1625,11 @@ async function pullAndMerge() {
     if (data) mergeAll(data);
     persistLocal();
     await pushNow();            // マージ結果を書き戻す
-    syncState = "saved";
+    if (syncState !== "error") { syncState = "saved"; syncError = ""; }
   } catch (e) {
     console.error("pull", e);
     syncState = "error";
+    syncError = (e && (e.message || e.error_description || e.details)) || String(e);
   }
   render();
 }
@@ -1634,8 +1643,12 @@ async function pushNow() {
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
     if (error) throw error;
-    syncState = "saved";
-  } catch (e) { console.error("push", e); syncState = "error"; }
+    syncState = "saved"; syncError = "";
+  } catch (e) {
+    console.error("push", e);
+    syncState = "error";
+    syncError = (e && (e.message || e.error_description || e.details)) || String(e);
+  }
 }
 
 function schedulePush() {
@@ -1951,6 +1964,12 @@ function bindApp() {
     });
   }));
 
+  const sy = $("#st-sync");
+  if (sy) sy.onclick = async () => {
+    sy.disabled = true; sy.textContent = "同期しています…";
+    await pullAndMerge();
+    showToast(syncState === "error" ? "同期に失敗しました" : "同期しました");
+  };
   const so = $("#st-signout");
   if (so) so.onclick = signOutCloud;
   const si = $("#st-signin");
