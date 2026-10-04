@@ -321,6 +321,15 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .grp-opt.on{border-color:#28407A;background:rgba(40,64,122,.07)}
 .grp-opt.on .grp-name{color:#28407A}
 
+.code-row{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
+.code-row .code-input{flex:1;margin-bottom:0}
+.code-paste{
+  flex-shrink:0;padding:0 16px;border:1px solid rgba(40,64,122,.35);border-radius:2px;
+  background:rgba(40,64,122,.07);color:#28407A;font-family:inherit;font-size:12.5px;
+  font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;
+}
+.code-paste:active{background:rgba(40,64,122,.16)}
+
 .code-input{
   font-family:'Shippori Mincho B1',serif;font-size:24px;letter-spacing:.24em;
   text-align:center;padding:14px 8px 14px 16px;font-weight:700;
@@ -1633,8 +1642,10 @@ async function sendMagicLink(email) {
   if (error) {
     const m = (error.message || "").toLowerCase();
     if (m.includes("not allowed") || m.includes("signups")) return { ok: false, msg: "このメールアドレスは登録されていません" };
-    if (m.includes("rate")) return { ok: false, msg: "送信が集中しています。少し待って再度お試しください" };
-    return { ok: false, msg: "送信に失敗しました" };
+    if (m.includes("rate") || m.includes("too many") || m.includes("security purposes"))
+      return { ok: false, msg: "短時間に何度も送信されました。1〜2分おいてから、もう一度お試しください。" };
+    if (m.includes("invalid") && m.includes("email")) return { ok: false, msg: "メールアドレスの形式をご確認ください" };
+    return { ok: false, msg: "送信できませんでした。しばらく待ってお試しください。" };
   }
   return { ok: true };
 }
@@ -1778,10 +1789,13 @@ function loginView() {
       '<p class="onb-lead"><strong>' + esc(loginEmail) + '</strong> に<br>確認コードを送りました。<br>メールを開いて、コードを入力してください。</p>' +
       '<div class="onb-card">' +
         '<label class="fld-label">確認コード</label>' +
-        '<input class="fld code-input" id="lg-code" type="text" inputmode="numeric" ' +
-          'autocomplete="one-time-code" maxlength="10" placeholder="確認コード">' +
+        '<div class="code-row">' +
+          '<input class="fld code-input" id="lg-code" type="text" inputmode="numeric" ' +
+            'autocomplete="one-time-code" maxlength="10" placeholder="コードを入力">' +
+          '<button class="code-paste" id="lg-paste" aria-label="貼り付け">貼り付け</button>' +
+        '</div>' +
         '<button class="btn-primary" id="lg-verify">ログインする</button>' +
-        '<p class="note" id="lg-msg">コードは数分で期限切れになります。</p>' +
+        '<p class="note" id="lg-msg">メールのコードを長押しして「コピー」→「貼り付け」が便利です。<br>コードは数分で期限切れになります。</p>' +
         '<button class="btn-ghost" id="lg-back">メールアドレスを入れ直す</button>' +
         '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
       '</div></div>';
@@ -1939,6 +1953,19 @@ function bindLogin() {
     code.onkeydown = (e) => { if (e.key === "Enter") doVerify(); };
     setTimeout(() => { try { code.focus(); } catch (e) {} }, 100);
   }
+
+  const paste = $("#lg-paste");
+  if (paste && code) paste.onclick = async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      const n = (t || "").replace(/\D/g, "").slice(0, 10);
+      if (!n) { msg.textContent = "コピーした内容に数字が見つかりませんでした"; return; }
+      code.value = n;
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+    } catch (e) {
+      msg.textContent = "貼り付けできませんでした。手入力してください。";
+    }
+  };
 
   const back = $("#lg-back");
   if (back) back.onclick = () => { loginStep = "email"; render(); };
