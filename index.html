@@ -304,6 +304,27 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .st-hdel:hover:not(:disabled){color:#7A2828}
 .st-hdel:disabled{opacity:.2;cursor:default}
 
+.grp-fixed{
+  display:flex;align-items:baseline;gap:10px;padding:12px 14px;margin-bottom:10px;
+  border:1px solid rgba(40,64,122,.3);background:rgba(40,64,122,.06);border-radius:2px;
+}
+.grp-fixed.none{color:#4A4E58;font-size:13px;border-color:rgba(25,28,34,.18);background:#fff}
+
+.grp{display:flex;gap:8px;margin-bottom:14px}
+.grp-opt{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:13px 6px;border:1px solid rgba(25,28,34,.18);border-radius:2px;
+  background:#fff;cursor:pointer;font-family:inherit;transition:all .18s ease;
+}
+.grp-name{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;color:#191C22}
+.grp-note{font-size:10px;color:#4A4E58;letter-spacing:.02em}
+.grp-opt.on{border-color:#28407A;background:rgba(40,64,122,.07)}
+.grp-opt.on .grp-name{color:#28407A}
+
+.code-input{
+  font-family:'Shippori Mincho B1',serif;font-size:26px;letter-spacing:.42em;
+  text-align:center;padding:14px 10px 14px 20px;font-weight:700;
+}
 .sync-err{font-size:11.5px;color:#7A2828;line-height:1.85;background:rgba(122,40,40,.06);border:1px solid rgba(122,40,40,.25);border-radius:2px;padding:9px 11px;margin-bottom:10px;word-break:break-word}
 
 /* sync badge */
@@ -397,18 +418,25 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 
 <script>
 /* =========================================================
-   ★ 管理者設定（清水さんがデプロイ前にここだけ編集）
-   SlackのIncoming Webhook URLを「base64に変換して」貼り付けます。
-   （公開リポジトリではURLを直接書くとSlack側で自動無効化されるため）
+   ★ 管理者設定：Slack通知先（グループ別）
+   それぞれのチャンネルの Incoming Webhook URL を
+   base64に変換して貼り付けます。
 
-   変換方法：ブラウザで F12 → Console を開き、次を実行してコピー
+   変換方法：ブラウザで F12 → Console を開き、次を実行
      btoa("https://hooks.slack.com/services/T000/B000/XXXX")
 
-   例: const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20v...";
+   ※ 片方だけ設定した場合、もう一方のグループには通知されません。
 ========================================================= */
-const SLACK_WEBHOOK_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBCRlhTNEhOOFovRUdDU1Vzc3gzRVJwaWJkcEdJTTM2bU1H";
+const SLACK_WEBHOOK_A_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBDNkpIQ0czSzgvRFEyS1dqTGFqTnNvR0VXd2RMODhGaXFq";
+const SLACK_WEBHOOK_B_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBDNlE2UThLTjAvenVYUkNZWGxMcjU1VWxCM25jMGZKeXlJ";
 
-const SLACK_WEBHOOK = SLACK_WEBHOOK_B64 ? atob(SLACK_WEBHOOK_B64) : "";
+const GROUPS = [
+  { id: "A",  label: "グループA",   note: "第3水 19:00〜22:00" },
+  { id: "B",  label: "グループB",   note: "第4水 13:00〜16:00" },
+  { id: "AB", label: "グループA・B", note: "両方のチャンネルに投稿されます" },
+];
+const dec = (s) => { try { return s ? atob(s) : ""; } catch (e) { return ""; } };
+const SLACK_WEBHOOKS = { A: dec(SLACK_WEBHOOK_A_B64), B: dec(SLACK_WEBHOOK_B_B64) };
 
 /* =========================================================
    ★ 同期設定（Supabase）
@@ -482,7 +510,13 @@ const JOURNAL_QUESTIONS = [
   { id: "q3", label: "明日、ひとつだけ変えるとしたら？" },
 ];
 
-const webhookUrl = () => SLACK_WEBHOOK;
+function webhookUrls() {
+  const g = (profile && profile.group) || "";
+  if (!g) return [];
+  // "AB" のように複数指定された場合は、該当するチャンネルすべてに送る
+  return g.split("").map((id) => SLACK_WEBHOOKS[id]).filter(Boolean);
+}
+const webhookUrl = () => webhookUrls()[0] || "";
 
 /* ---------- stats ---------- */
 function computeStats() {
@@ -533,12 +567,14 @@ function computeHabitStats(habitId) {
 
 /* ---------- Slack ---------- */
 function sendSlack(text) {
-  const url = webhookUrl();
-  if (!url) return Promise.resolve(false);
+  const urls = webhookUrls();
+  if (!urls.length) return Promise.resolve(false);
   // Incoming WebhookはCORSヘッダを返さないため no-cors で送信（結果は不透明）
-  return fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify({ text }) })
-    .then(() => true)
-    .catch(() => false);
+  // 複数グループ所属の場合は、該当するチャンネルすべてに送る
+  return Promise.all(urls.map((u) =>
+    fetch(u, { method: "POST", mode: "no-cors", body: JSON.stringify({ text }) })
+      .then(() => true).catch(() => false)
+  )).then((rs) => rs.every(Boolean)).catch(() => false);
 }
 
 function showToast(msg) {
@@ -1049,7 +1085,9 @@ function habitView() {
         ? (editYesterday ? '昨日の記録を再投稿する' : '今日の記録を再投稿する')
         : (editYesterday ? '昨日の記録をSlackに投稿する' : '今日の記録をSlackに投稿する')) + '</button>';
   } else {
-    html += '<p class="note">Slack通知は現在オフになっています（管理者側で設定されます）。</p>';
+    html += '<p class="note">' + (profile.group
+      ? ((GROUPS.find((g) => g.id === profile.group) || {}).label || "所属グループ") + ' のSlack通知はまだ設定されていません（管理者側で設定されます）。'
+      : 'Slack通知は現在オフになっています。') + '</p>';
   }
   html += '</section>';
 
@@ -1489,6 +1527,16 @@ function settingsView() {
     '<section class="card"><h2 class="card-title">一年の目標（1〜3個）</h2>' +
     '<div id="st-goals">' + goalFields + '</div>' +
     (profile.goals.length < 3 ? '<button class="btn-ghost" id="st-add-goal">＋ 目標を追加</button>' : "") +
+    '<label class="fld-label">所属グループ</label>' +
+    (() => {
+      const g = GROUPS.find((x) => x.id === profile.group);
+      return g
+        ? '<div class="grp-fixed"><span class="grp-name">' + g.label + '</span>' +
+          '<span class="grp-note">' + g.note + '</span></div>' +
+          '<p class="note" style="margin-top:0">記録は' + g.label + 'のSlackチャンネルに投稿されます。変更が必要な場合は運営までご連絡ください。</p>'
+        : '<div class="grp-fixed none">未設定</div>' +
+          '<p class="note" style="margin-top:0">運営側でグループを設定します。設定されるまでSlackへの投稿はできません。</p>';
+    })() +
     '<label class="fld-label">毎日の習慣（1〜5個）</label>' +
     '<div id="st-habits">' + habitRows + '</div>' +
     (profile.habits.length < 5 ? '<button class="btn-ghost" id="st-add-habit">＋ 習慣を追加</button>' : "") +
@@ -1532,6 +1580,9 @@ let syncState = "off";      // off | ready | syncing | saved | error
 let syncError = "";         // 直近の同期エラー内容
 let pushTimer = null;
 let localOnly = localStorage.getItem("circle_local_only") === "1";
+let loginStep = "email";    // email | code
+let loginEmail = "";
+let cloudReady = false;     // initCloud 完了フラグ
 
 function cloudEnabled() { return !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase); }
 function signedIn() { return !!(sb && session); }
@@ -1547,11 +1598,30 @@ async function initCloud() {
     sb.auth.onAuthStateChange((_e, s) => {
       const was = !!session;
       session = s;
-      if (!was && s) { pullAndMerge(); }
+      if (!was && s) { loginStep = "email"; render(); pullAndMerge(); }
       if (was && !s) { syncState = "off"; render(); }
     });
     if (session) { syncState = "ready"; await pullAndMerge(); }
-  } catch (e) { console.error("initCloud", e); }
+    cloudReady = true;
+
+    // オンライン復帰・アプリ再表示で自動的に再同期
+    window.addEventListener("online", retrySync);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) retrySync();
+    });
+  } catch (e) { console.error("initCloud", e); cloudReady = true; }
+}
+
+let lastSyncAt = 0;
+async function retrySync() {
+  if (!signedIn()) return;
+  if (navigator.onLine === false) return;
+  // エラー時は即、通常時も30秒に1回まで
+  const now = Date.now();
+  if (syncState !== "error" && now - lastSyncAt < 30000) return;
+  lastSyncAt = now;
+  await pullAndMerge();
+  renderSyncBadge();
 }
 
 async function sendMagicLink(email) {
@@ -1565,6 +1635,20 @@ async function sendMagicLink(email) {
     if (m.includes("not allowed") || m.includes("signups")) return { ok: false, msg: "このメールアドレスは登録されていません" };
     if (m.includes("rate")) return { ok: false, msg: "送信が集中しています。少し待って再度お試しください" };
     return { ok: false, msg: "送信に失敗しました" };
+  }
+  return { ok: true };
+}
+
+async function verifyCode(code) {
+  if (!sb) return { ok: false, msg: "同期が設定されていません" };
+  const { error } = await sb.auth.verifyOtp({
+    email: loginEmail, token: code.trim(), type: "email",
+  });
+  if (error) {
+    const m = (error.message || "").toLowerCase();
+    if (m.includes("expired")) return { ok: false, msg: "コードの有効期限が切れています。送り直してください" };
+    if (m.includes("invalid")) return { ok: false, msg: "コードが違います。もう一度ご確認ください" };
+    return { ok: false, msg: "確認できませんでした" };
   }
   return { ok: true };
 }
@@ -1616,6 +1700,21 @@ function mergeAll(cloud) {
   return changed;
 }
 
+async function fetchGroup() {
+  if (!signedIn()) return;
+  try {
+    const email = (session.user.email || "").toLowerCase();
+    const { data, error } = await sb.from("member_groups")
+      .select("grp").eq("email", email).maybeSingle();
+    if (error) { console.error("group", error); return; }
+    const g = data && data.grp ? data.grp : "";
+    if (profile && profile.group !== g) {
+      profile.group = g;
+      persistLocal();
+    }
+  } catch (e) { console.error("fetchGroup", e); }
+}
+
 async function pullAndMerge() {
   if (!signedIn()) return;
   syncState = "syncing"; render();
@@ -1624,6 +1723,7 @@ async function pullAndMerge() {
     if (error) throw error;
     if (data) mergeAll(data);
     persistLocal();
+    await fetchGroup();
     await pushNow();            // マージ結果を書き戻す
     if (syncState !== "error") { syncState = "saved"; syncError = ""; }
   } catch (e) {
@@ -1670,15 +1770,32 @@ function syncLabel() {
 
 /* ---------- login screen ---------- */
 function loginView() {
+  if (loginStep === "code") {
+    return '<div class="onb">' +
+      '<div class="onb-mark">' + RING + '</div>' +
+      '<h1 class="onb-title">Daily Circle</h1>' +
+      '<div class="onb-tate">日々の記録帳</div>' +
+      '<p class="onb-lead"><strong>' + esc(loginEmail) + '</strong> に<br>6桁の確認コードを送りました。<br>メールを開いて、コードを入力してください。</p>' +
+      '<div class="onb-card">' +
+        '<label class="fld-label">確認コード</label>' +
+        '<input class="fld code-input" id="lg-code" type="text" inputmode="numeric" ' +
+          'autocomplete="one-time-code" maxlength="6" placeholder="000000">' +
+        '<button class="btn-primary" id="lg-verify">ログインする</button>' +
+        '<p class="note" id="lg-msg">コードは数分で期限切れになります。</p>' +
+        '<button class="btn-ghost" id="lg-back">メールアドレスを入れ直す</button>' +
+        '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+      '</div></div>';
+  }
   return '<div class="onb">' +
     '<div class="onb-mark">' + RING + '</div>' +
     '<h1 class="onb-title">Daily Circle</h1>' +
     '<div class="onb-tate">日々の記録帳</div>' +
-    '<p class="onb-lead">メールアドレスを入力すると、ログイン用のリンクが届きます。パスワードは不要です。ログインすると、スマートフォンとパソコンで同じ記録を見られます。</p>' +
+    '<p class="onb-lead">メールアドレスを入力すると、確認コードが届きます。パスワードは不要です。ログインすると、スマートフォンとパソコンで同じ記録を見られます。</p>' +
     '<div class="onb-card">' +
       '<label class="fld-label">メールアドレス</label>' +
-      '<input class="fld" id="lg-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">' +
-      '<button class="btn-primary" id="lg-send">ログインリンクを送る</button>' +
+      '<input class="fld" id="lg-email" type="email" inputmode="email" autocomplete="email" ' +
+        'placeholder="you@example.com" value="' + esc(loginEmail) + '">' +
+      '<button class="btn-primary" id="lg-send">確認コードを送る</button>' +
       '<p class="note" id="lg-msg">Circleに登録されているアドレスのみログインできます。</p>' +
       '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
     '</div></div>';
@@ -1780,19 +1897,48 @@ function overlayView(stats) {
 
 
 function bindLogin() {
-  const send = $("#lg-send"), email = $("#lg-email"), msg = $("#lg-msg");
-  if (send) send.onclick = async () => {
-    const v = (email.value || "").trim();
-    if (!v || v.indexOf("@") < 0) { msg.textContent = "メールアドレスを入力してください"; return; }
-    send.disabled = true; msg.textContent = "送信中…";
-    const r = await sendMagicLink(v);
-    if (r.ok) {
-      msg.innerHTML = "<strong>" + esc(v) + " にリンクを送りました。</strong><br>メールを開いてリンクをタップしてください。届かない場合は迷惑メールもご確認ください。";
-      send.textContent = "もう一度送る";
-    } else { msg.textContent = r.msg; }
-    send.disabled = false;
-  };
-  if (email) email.onkeydown = (e) => { if (e.key === "Enter") send.click(); };
+  const msg = $("#lg-msg");
+
+  // --- メール入力ステップ ---
+  const send = $("#lg-send"), email = $("#lg-email");
+  if (send && email) {
+    const doSend = async () => {
+      const v = (email.value || "").trim();
+      if (!v || v.indexOf("@") < 0) { msg.textContent = "メールアドレスを入力してください"; return; }
+      send.disabled = true; msg.textContent = "送信中…";
+      const r = await sendMagicLink(v);
+      if (r.ok) {
+        loginEmail = v; loginStep = "code";
+        render();
+      } else { msg.textContent = r.msg; send.disabled = false; }
+    };
+    send.onclick = doSend;
+    email.onkeydown = (e) => { if (e.key === "Enter") doSend(); };
+  }
+
+  // --- コード入力ステップ ---
+  const vf = $("#lg-verify"), code = $("#lg-code");
+  if (vf && code) {
+    const doVerify = async () => {
+      const v = (code.value || "").replace(/\D/g, "");
+      if (v.length < 6) { msg.textContent = "6桁のコードを入力してください"; return; }
+      vf.disabled = true; msg.textContent = "確認しています…";
+      const r = await verifyCode(v);
+      if (!r.ok) { msg.textContent = r.msg; vf.disabled = false; code.value = ""; }
+      // 成功時は onAuthStateChange が render を呼ぶ
+    };
+    vf.onclick = doVerify;
+    code.oninput = () => {
+      code.value = code.value.replace(/\D/g, "").slice(0, 6);
+      if (code.value.length === 6) doVerify();
+    };
+    code.onkeydown = (e) => { if (e.key === "Enter") doVerify(); };
+    setTimeout(() => { try { code.focus(); } catch (e) {} }, 100);
+  }
+
+  const back = $("#lg-back");
+  if (back) back.onclick = () => { loginStep = "email"; render(); };
+
   const lo = $("#lg-local");
   if (lo) lo.onclick = () => {
     localOnly = true;
@@ -1805,6 +1951,11 @@ function bindLogin() {
 function render() {
   const app = $("#app");
   // 同期が有効かつ未ログイン、かつ「この端末だけ」を選んでいない場合はログイン画面
+  if (cloudEnabled() && !cloudReady && !localOnly) {
+    app.innerHTML = '<div class="onb"><div class="onb-mark">' + RING + '</div>' +
+      '<p class="onb-lead" style="margin-top:18px">読み込んでいます…</p></div>';
+    return;
+  }
   if (cloudEnabled() && !signedIn() && !localOnly) {
     app.innerHTML = loginView();
     bindLogin();
@@ -1850,7 +2001,7 @@ function bindOnb() {
     if (goals.length === 0) { showToast("目標を1つ以上入力してください"); return; }
     if (habits.length === 0) { showToast("習慣を1つ以上入力してください"); return; }
     profile = {
-      name, goals,
+      name, goals, group: (profile && profile.group) || "",
       habits: habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n })),
       startDate: todayKey(),
     };
