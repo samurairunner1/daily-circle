@@ -146,6 +146,7 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .habit-name{font-size:14px;font-weight:700;letter-spacing:.02em}
 .habit-meta{font-size:11px;color:#4A4E58;white-space:nowrap}
 .habit-meta em{font-style:normal;color:#B08A3E;font-weight:700}
+.habit-meta b{font-weight:700;color:#28407A}
 .habit-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:8px}
 .hd{width:9px;height:9px;border-radius:50%;background:#EDEAE1;display:inline-block}
 .hd.on{background:#28407A}
@@ -382,6 +383,16 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 
 /* 月次レポート */
 .ms::before{background:#B08A3E}
+.mile{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.m-item{flex:1;min-width:76px;border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:11px 6px;text-align:center;background:#fff}
+.m-item.got{border-color:#B08A3E;background:rgba(176,138,62,.08)}
+.m-item b{display:block;font-family:'Shippori Mincho B1',serif;font-size:16px;color:#4A4E58}
+.m-item.got b{color:#B08A3E}
+.m-item span{display:block;font-size:9.5px;color:#4A4E58;margin-top:3px}
+.empty-box{border:1px dashed rgba(25,28,34,.2);border-radius:2px;padding:22px 16px;text-align:center;background:rgba(255,255,255,.45)}
+.empty-box .em-i{font-size:20px;color:#B08A3E;margin-bottom:8px}
+.empty-box p{font-size:12.5px;color:#4A4E58;line-height:1.95}
+
 .ms-pick{margin-bottom:14px}
 .ms-select{
   margin-bottom:0;font-size:14px;padding:11px 12px;
@@ -701,6 +712,20 @@ function computeStats() {
   }
   const rate = Math.round(totalDone / (nHabits * elapsed) * 100);
   return { elapsed, rate: Math.min(100, rate), streak, stampedDays };
+}
+
+function habitBestStreak(habitId) {
+  if (!profile || !profile.startDate) return 0;
+  const start = dateFromKey(profile.startDate), end = dateFromKey(todayKey());
+  let best = 0, run = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const k = keyFromDate(cur);
+    if (logs[k] && (logs[k].done || []).includes(habitId)) { run++; if (run > best) best = run; }
+    else run = 0;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return best;
 }
 
 function computeHabitStats(habitId) {
@@ -1489,13 +1514,26 @@ function collectMonth(off) {
   };
 }
 
-function monthPrompt(m) {
+// 記録量に応じて、どのセクションを出すかを決める
+function monthSections(m) {
+  const wTotal = m.weather.sun + m.weather.cloud + m.weather.rain;
+  return {
+    weather: wTotal >= 3,              // 天気が3日分以上
+    themes: m.journalTexts.length >= 3, // ジャーナル3件以上
+    balance: m.journalTexts.length >= 8,// ジャーナル8件以上
+    tav: (m.tav.done + m.tav.open + m.tav.skip) > 0,
+  };
+}
+
+function monthPrompt(m, sec) {
   const lines = [];
   lines.push("【対象】" + m.year + "年" + m.month + "月（" + m.elapsed + "日分）");
   lines.push("【習慣の達成状況】");
   m.habits.forEach((h) => lines.push("・" + h.name + "：" + h.done + "/" + h.total + "日"));
-  lines.push("【心と体の天気】晴れ" + m.weather.sun + "日／曇り" + m.weather.cloud + "日／雨" + m.weather.rain + "日");
-  lines.push("【記録】習慣を記録した日 " + m.kpi.rec + "日、全習慣達成 " + m.kpi.full + "日、ジャーナル " + m.kpi.jr + "件");
+  lines.push("【記録した日】" + m.kpi.rec + "日（うち全習慣達成 " + m.kpi.full + "日）");
+  if (sec.weather) {
+    lines.push("【心と体の天気】晴れ" + m.weather.sun + "日／曇り" + m.weather.cloud + "日／雨" + m.weather.rain + "日");
+  }
   if (m.tavList.length) {
     lines.push("【実行した気づき(TAV)】");
     m.tavList.forEach((t) => lines.push("・" + t.title + " → " + (t.review || "")));
@@ -1504,6 +1542,14 @@ function monthPrompt(m) {
     lines.push("【ジャーナルの記述】");
     m.journalTexts.slice(-25).forEach((t) => lines.push(t));
   }
+  // 生成してほしい項目を明示（データがないものは作らせない）
+  const want = ["headline", "body", "question"];
+  if (sec.themes) want.push("themes");
+  if (sec.balance) want.push("balance");
+  lines.push("");
+  lines.push("【出力してほしい項目】" + want.join(", "));
+  if (!sec.themes) lines.push("※themesは出力しないでください（記録が少ないため）");
+  if (!sec.balance) lines.push("※balanceは出力しないでください（記録が少ないため）");
   return lines.join("\n");
 }
 
@@ -1511,14 +1557,17 @@ async function runMonthly() {
   monthlyLoading = true; monthlyReport = null; render();
   try {
     const m = collectMonth(monthOffset);
-    const ai = await callAI("monthly", monthPrompt(m));
+    const sec = monthSections(m);
+    const ai = await callAI("monthly", monthPrompt(m, sec));
     monthlyReport = Object.assign({}, m, {
       offset: monthOffset,
+      sec,
       headline: ai.headline || "",
       body_text: ai.body || "",
       question: ai.question || "",
-      themes: Array.isArray(ai.themes) ? ai.themes : [],
-      balance: Array.isArray(ai.balance) ? ai.balance : [],
+      // データが足りない項目は、AIが返してきても使わない
+      themes: sec.themes && Array.isArray(ai.themes) ? ai.themes : [],
+      balance: sec.balance && Array.isArray(ai.balance) ? ai.balance : [],
       at: Date.now(),
     });
   } catch (e) {
@@ -1603,6 +1652,19 @@ function monthPickerHTML() {
     '<select class="fld ms-select" id="ms-month">' + opts.join("") + '</select></div>';
 }
 
+function milestoneHTML() {
+  const s = computeStats();
+  const n = s.stampedDays;
+  const items = MILESTONES.map((m) => {
+    const got = n >= m;
+    return '<div class="m-item' + (got ? ' got' : '') + '"><b>' + m + '日</b>' +
+      '<span>' + (got ? '達成' : 'あと' + (m - n) + '日') + '</span></div>';
+  }).slice(0, 4).join("");
+  return '<div class="ms-sec"><span class="ms-no">07</span><h3>積み重ねの節目</h3></div>' +
+    '<p class="ms-note">記録した日の累計です。66日は、習慣が定着するまでの平均日数とされています。</p>' +
+    '<div class="mile">' + items + '</div>';
+}
+
 function monthlyHTML() {
   const r = monthlyReport;
   if (monthlyLoading) {
@@ -1658,7 +1720,7 @@ function monthlyHTML() {
     '</div>' +
     '<div class="ms-sec"><span class="ms-no">01</span><h3>習慣の達成率</h3></div>' +
     '<div class="ms-habits">' + habitBars + '</div>' +
-    ((r.mind.length || r.body.length) ?
+    ((r.sec && r.sec.weather && (r.mind.length || r.body.length)) ?
       '<div class="ms-sec"><span class="ms-no">02</span><h3>心と体の推移</h3></div>' +
       msLineChart(r.mind, r.body, r.dim) +
       '<div class="ms-legend"><span><i class="ms-dot" style="background:#28407A"></i>心</span>' +
@@ -1684,6 +1746,7 @@ function monthlyHTML() {
     (r.body_text ?
       '<div class="ms-sec"><span class="ms-no">06</span><h3>今月の所見</h3></div>' +
       '<div class="ms-body">' + r.body_text.split("\n\n").map((p) => '<p>' + esc(p) + '</p>').join("") + '</div>' : '') +
+    milestoneHTML() +
     (r.question ?
       '<div class="fb ms-q"><div class="fb-head"><span class="fb-mark">◇</span>' +
       '<span class="fb-label">来月への問い</span><span class="fb-private">自分だけに表示</span></div>' +
@@ -1724,20 +1787,25 @@ function weatherGridHTML(kind, title) {
   const year = appNow().getFullYear();
   const today = appNow();
   const count = { sun: 0, cloud: 0, rain: 0 };
+  const sM2 = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const eM2 = today.getFullYear() === year ? today.getMonth() : 11;
   let grid = "";
-  for (let m = 0; m < 12; m++) {
+  for (let m = sM2; m <= eM2; m++) {
     const dim = new Date(year, m + 1, 0).getDate();
     let cells = "";
     for (let i = 1; i <= dim; i++) {
       const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
       const v = journals[k] && journals[k][kind];
-      const future = dateFromKey(k) > today;
       if (v) count[v] = (count[v] || 0) + 1;
-      const style = future ? "background:transparent;border:1px dashed rgba(25,28,34,.18)"
-        : v ? "background:" + WEATHER_COLOR[v] + ";border:1px solid transparent"
+      const style = v ? "background:" + WEATHER_COLOR[v] + ";border:1px solid transparent"
         : "background:#EDEAE1;border:1px solid transparent";
       cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
     }
+    if (!cells) continue;
     grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
   }
   const total = count.sun + count.cloud + count.rain;
@@ -1752,25 +1820,31 @@ function journalReviewHTML() {
   const keys = Object.keys(journals).filter((k) => journals[k] && journals[k].savedAt).sort();
   if (keys.length === 0) {
     return '<section class="card"><h2 class="card-title">ジャーナルの記録</h2>' +
-      '<p class="empty">まだジャーナルがありません。「習慣」タブから、今日の一日を書き留めてみましょう。</p></section>';
+      '<div class="empty-box"><div class="em-i">◇</div>' +
+      '<p>まだジャーナルの記録がありません。<br>心と体の天気をひとつ選ぶだけでも、<br>翌月の振り返りが変わります。</p></div></section>';
   }
   const year = appNow().getFullYear();
   const today = appNow();
 
   // 年間グリッド（記録した日）
+  const sM = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const eM = today.getFullYear() === year ? today.getMonth() : 11;
   let grid = "";
-  for (let m = 0; m < 12; m++) {
+  for (let m = sM; m <= eM; m++) {
     const dim = new Date(year, m + 1, 0).getDate();
     let cells = "";
     for (let i = 1; i <= dim; i++) {
       const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
       const has = journals[k] && journals[k].savedAt;
-      const future = dateFromKey(k) > today;
-      const style = future ? "background:transparent;border:1px dashed rgba(25,28,34,.18)"
-        : has ? "background:#B08A3E;border:1px solid transparent"
+      const style = has ? "background:#B08A3E;border:1px solid transparent"
         : "background:#EDEAE1;border:1px solid transparent";
       cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
     }
+    if (!cells) continue;
     grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
   }
 
@@ -2071,22 +2145,27 @@ function recordView(stats) {
   const year = appNow().getFullYear();
   const nHabits = profile.habits.length || 1;
   const today = appNow();
+  const startM = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const endM = today.getFullYear() === year ? today.getMonth() : 11;
   let grid = "";
-  for (let m = 0; m < 12; m++) {
+  for (let m = startM; m <= endM; m++) {
     const dim = new Date(year, m + 1, 0).getDate();
     let cells = "";
     for (let i = 1; i <= dim; i++) {
       const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
       const v = logs[k];
       const ratio = v ? (v.done || []).length / nHabits : 0;
-      const future = dateFromKey(k) > today;
       let style;
-      if (future) style = "background:transparent;border:1px dashed rgba(25,28,34,.18)";
-      else if (ratio >= 1) style = "background:#28407A;border:1px solid transparent";
+      if (ratio >= 1) style = "background:#28407A;border:1px solid transparent";
       else if (ratio > 0) style = "background:transparent;border:1.5px solid rgba(40,64,122," + (0.4 + ratio * 0.5).toFixed(2) + ")";
       else style = "background:#EDEAE1;border:1px solid transparent";
       cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
     }
+    if (!cells) continue;
     grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
   }
 
@@ -2098,12 +2177,15 @@ function recordView(stats) {
   let habitRows = "";
   profile.habits.forEach((h) => {
     const hs = computeHabitStats(h.id);
+    const best = habitBestStreak(h.id);
     const dots = last28.map((k) =>
       '<span class="hd' + ((logs[k] && (logs[k].done || []).includes(h.id)) ? " on" : "") + '" title="' + k + '"></span>'
     ).join("");
     habitRows += '<div class="habit-row"><div class="habit-head">' +
       '<span class="habit-name">' + esc(h.name) + '</span>' +
-      '<span class="habit-meta"><em>連続 ' + hs.streak + '日</em>　達成率 ' + hs.rate + '%</span></div>' +
+      '<span class="habit-meta"><em>連続 ' + hs.streak + '日</em>' +
+      (best > hs.streak ? '　最長 <b>' + best + '日</b>' : '') +
+      '　達成率 ' + hs.rate + '%</span></div>' +
       '<div class="habit-dots">' + dots + '</div></div>';
   });
 
@@ -2114,7 +2196,7 @@ function recordView(stats) {
       '<div class="stat"><div class="stat-val">' + stats.stampedDays + '日</div><div class="stat-label">記録した日</div></div>' +
     '</div>' +
     '<section class="card"><h2 class="card-title">' + year + '年の記録</h2>' +
-    '<p class="card-sub">一つの点が一日。すべて達成した日は塗りつぶし、一部達成の日は輪郭のみで表示されます。</p>' +
+    '<p class="card-sub">一つの点が一日。すべて達成した日は塗りつぶし、一部達成の日は輪郭のみで表示されます。始めてからの日々だけを並べています。</p>' +
     '<div class="year-grid">' + grid + '</div>' +
     '<div class="glegend"><span><i class="gd gd-full"></i> すべて達成</span><span><i class="gd gd-part"></i> 一部達成</span><span><i class="gd gd-none"></i> 未記録</span></div>' +
     '</section>' +
