@@ -107,6 +107,13 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .btn-primary:hover{background:#1B2C58}
 .btn-primary:disabled{opacity:.4;cursor:default}
 .post-btn{margin-top:16px}
+.saved-hint{
+  display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:12px;
+  border-top:1px dashed rgba(25,28,34,.14);
+  font-size:11.5px;color:#4A4E58;letter-spacing:.03em;
+}
+.saved-dot{width:7px;height:7px;border-radius:50%;background:#28407A;flex-shrink:0}
+.share-card::before{background:#B08A3E}
 .btn-ghost{
   background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:10px;
   font-family:inherit;font-size:13px;color:#4A4E58;cursor:pointer;width:100%;margin-bottom:10px;letter-spacing:.06em;
@@ -289,9 +296,22 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 .tvr-a{font-size:12.5px;color:#191C22;line-height:1.95;margin-top:3px;white-space:pre-wrap}
 
 /* v3: day switch (昨日編集) */
-.day-switch{display:flex;gap:6px;margin:2px 0 4px}
-.dsw{background:transparent;border:1px solid rgba(25,28,34,.16);border-radius:999px;padding:6px 16px;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;letter-spacing:.1em;color:#4A4E58;cursor:pointer}
-.dsw.on{background:#28407A;border-color:#28407A;color:#F7F4EE}
+.day-nav{display:flex;gap:6px;align-items:center;margin:4px 0 6px}
+.dnav{
+  min-width:38px;height:38px;border:1px solid rgba(25,28,34,.16);border-radius:999px;
+  background:transparent;font-size:17px;line-height:1;color:#28407A;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;
+}
+.dnav:disabled{opacity:.28;cursor:default}
+.dnav.today-btn{
+  width:auto;padding:0 14px;font-family:'Shippori Mincho B1',serif;font-weight:700;
+  font-size:12px;letter-spacing:.08em;
+}
+.day-picker{
+  flex:1;min-width:0;height:38px;border:1px solid rgba(25,28,34,.16);border-radius:999px;
+  background:#fff;padding:0 12px;font-family:inherit;font-size:13px;color:#191C22;
+  text-align:center;-webkit-appearance:none;appearance:none;
+}
 .yst-tag{font-size:10px;font-weight:700;letter-spacing:.1em;background:#B08A3E;color:#fff;border-radius:999px;padding:3px 9px;margin-left:9px;vertical-align:3px;font-family:'Zen Kaku Gothic New',sans-serif}
 
 /* v3: settings habit rows */
@@ -500,7 +520,8 @@ let tab = "habit";
 let menuOpen = false;
 let overlay = null;   // "review" | "settings" | null
 let tavFilter = "active";
-let editYesterday = false;
+let dayOffset = 0;          // 0=今日, 1=昨日, ... 最大30
+const MAX_BACK = 30;        // さかのぼれる日数
 let toastTimer = null;
 let ringAnimated = false;
 
@@ -755,6 +776,9 @@ async function generateCard() {
 
 
 /* ---------- weekly report ---------- */
+const WD = ["日","月","火","水","木","金","土"];
+function fmtDate(d) { return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; }
+
 function mondayOf(d) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // 月曜起点
@@ -778,17 +802,17 @@ function weeklyReportMsg() {
     let row = "", n = 0;
     dayKeys.forEach((k) => {
       const on = logs[k] && (logs[k].done || []).includes(h.id);
-      row += on ? ":large_blue_circle:" : ":white_circle:";
+      row += on ? "◉" : "○";
       if (on) n++;
     });
-    return row + " " + h.name + "（" + n + "/7）";
+    return row + "　" + h.name + "　" + Math.round(n / 7 * 100) + "%";
   }).join("\n");
-  const fmt = (k) => { const p = k.split("-"); return Number(p[1]) + "/" + Number(p[2]); };
+  const s = computeStats();
   return {
     wk,
-    text: ":bar_chart: 【Daily Circle】" + profile.name + " さんの先週のふりかえり（" +
-      fmt(dayKeys[0]) + "〜" + fmt(dayKeys[6]) + "・月〜日）\n" + lines +
-      "\n:pencil: 記録した日 " + recDays + "/7日"
+    text: "*" + fmtDate(dateFromKey(dayKeys[0])) + "〜" + fmtDate(dateFromKey(dayKeys[6])) +
+      "　" + profile.name + " の一週間*\n" + lines +
+      "\n\n記録した日 " + recDays + "/7　　:fire: " + s.streak + "日連続"
   };
 }
 
@@ -809,24 +833,19 @@ function postToday() {
   if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
   const s = computeStats();
   const lines = profile.habits.map((h) => {
-    if (day.done.includes(h.id)) {
-      const hs = computeHabitStats(h.id);
-      return ":white_check_mark: " + h.name + "（" + hs.streak + "日連続）";
-    }
-    return ":white_large_square: " + h.name;
+    const done = day.done.includes(h.id);
+    const hs = done ? computeHabitStats(h.id) : null;
+    return (done ? "◉ " : "○ ") + h.name + (done && hs.streak ? "　" + hs.streak + "日" : "");
   }).join("\n");
   const isUpdate = !!day.posted;
   const celebrated = profile.celebrated || [];
   const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
   const dd = dateFromKey(key);
-  const dayLabel = editYesterday
-    ? "の記録（" + (dd.getMonth() + 1) + "/" + dd.getDate() + "・後から記録）"
-    : "さんの今日の記録".slice(3);
-  const msg = ":large_blue_circle: 【Daily Circle】" + profile.name + " さん" +
-    (editYesterday ? dayLabel : "の今日の記録") +
-    (isUpdate ? "（更新）" : "") + "\n" + lines +
-    "\n:fire: 投稿" + s.streak + "日連続中" +
-    (milestone ? "\n:tada: :confetti_ball: 祝・投稿" + milestone + "日連続を達成！ :confetti_ball: :tada:" : "");
+  const msg = "*" + fmtDate(dd) + "　" + profile.name + "*" +
+    (isPast() ? "（後から記録）" : "") + (isUpdate ? "（更新）" : "") + "\n" +
+    lines +
+    "\n\n:fire: " + s.streak + "日連続　　達成率 " + s.rate + "%" +
+    (milestone ? "\n\n:tada: 祝・" + milestone + "日連続達成" : "");
   sendSlack(msg).then((ok) => {
     if (ok) {
       day.posted = true;
@@ -836,7 +855,7 @@ function postToday() {
       render();
       if (milestone) showCelebration(milestone);
       showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
-      const wr = weeklyReportMsg();
+      const wr = isPast() ? null : weeklyReportMsg();   // 週次は今日の投稿時のみ
       if (wr) {
         sendSlack(wr.text).then((ok2) => {
           if (ok2) {
@@ -855,7 +874,7 @@ function postToday() {
 
 /* ---------- journal actions ---------- */
 function saveJournal() {
-  const key = todayKey();
+  const key = targetKey();
   const entry = journals[key] || {};
   let any = false;
   document.querySelectorAll(".jr-field").forEach((el) => {
@@ -875,15 +894,16 @@ function saveJournal() {
   persist();
 
   if (share && webhookUrl()) {
-    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "*" + q.label + "*\n" + entry[q.id] : "")
-      .filter(Boolean).join("\n");
-    const d = appNow();
-    const st = entry.stars ? "\n" + ":star:".repeat(entry.stars) : "";
-    const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.emoji + " " + w.label : ""; };
+    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "_" + q.label + "_\n" + entry[q.id] : "")
+      .filter(Boolean).join("\n\n");
+    const d = dateFromKey(key);
+    const st = entry.stars ? "　" + "★".repeat(entry.stars) + "☆".repeat(5 - entry.stars) : "";
+    const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.label : "—"; };
     const wl = (entry.mind || entry.body)
-      ? "\n心 " + (wOf(entry.mind) || "—") + "　体 " + (wOf(entry.body) || "—") : "";
-    sendSlack(":writing_hand: 【Daily Circle】" + profile.name + " さんのジャーナル（" +
-      (d.getMonth() + 1) + "/" + d.getDate() + "）" + st + wl + "\n" + body).then((ok) => {
+      ? "心 " + wOf(entry.mind) + "　体 " + wOf(entry.body) + "\n\n" : "";
+    sendSlack("*" + fmtDate(d) + "　" + profile.name + " のジャーナル*" +
+      (isPast() ? "（後から記録）" : "") + st + "\n" +
+      wl + body).then((ok) => {
       if (ok) { entry.posted = true; journals[key] = entry; persist(); }
       render();
       showToast(ok ? "保存してSlackに共有しました" : "保存しました（Slack共有に失敗）");
@@ -945,8 +965,8 @@ function tavComplete(id) {
       t.shared = !!share;
       persist(); render();
       if (share && webhookUrl()) {
-        sendSlack(":bulb: 【Daily Circle】" + profile.name + " さんがTAVを実行しました\n" +
-          "*気づき*：" + t.title + "\n*やってみて*：" + v).then((ok) =>
+        sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+          "◉ " + t.title + "\n\n_やってみて_\n" + v).then((ok) =>
           showToast(ok ? "完了しました。Slackに共有しました" : "完了しました（Slack共有に失敗）"));
       } else showToast("完了しました");
     },
@@ -956,8 +976,8 @@ function tavComplete(id) {
 function tavShare(id) {
   const t = findTav(id);
   if (!t || !webhookUrl()) return;
-  sendSlack(":bulb: 【Daily Circle】" + profile.name + " さんがTAVを実行しました\n" +
-    "*気づき*：" + t.title + "\n*やってみて*：" + t.review).then((ok) => {
+  sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+    "◉ " + t.title + "\n\n_やってみて_\n" + t.review).then((ok) => {
     if (ok) { t.shared = true; persist(); render(); }
     showToast(ok ? "Slackに共有しました" : "共有に失敗しました");
   });
@@ -1046,11 +1066,18 @@ function headerView(stats) {
   '</header>';
 }
 
-function yesterdayKey() {
-  const d = appNow(); d.setDate(d.getDate() - 1);
-  return keyFromDate(d);
+function dateByOffset(n) {
+  const d = appNow(); d.setDate(d.getDate() - n);
+  return d;
 }
-function targetKey() { return editYesterday ? yesterdayKey() : todayKey(); }
+function targetKey() { return keyFromDate(dateByOffset(dayOffset)); }
+function isPast() { return dayOffset > 0; }
+// 開始日より前にはさかのぼれない
+function maxBack() {
+  if (!profile || !profile.startDate) return MAX_BACK;
+  const diff = daysBetween(dateFromKey(profile.startDate), dateFromKey(todayKey()));
+  return Math.max(0, Math.min(MAX_BACK, diff));
+}
 
 function habitView() {
   const tk = targetKey();
@@ -1064,20 +1091,24 @@ function habitView() {
     '<div class="day-head">' +
       '<div><div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span>' +
       '<span class="date-wd">' + wd + '曜日</span>' +
-      (editYesterday ? '<span class="yst-tag">昨日</span>' : '') + '</div>' +
+      (dayOffset === 1 ? '<span class="yst-tag">昨日</span>'
+        : dayOffset > 1 ? '<span class="yst-tag">' + dayOffset + '日前</span>' : '') + '</div>' +
       '<div class="day-sub">' + (day.posted
-        ? (editYesterday ? '昨日の記録は投稿済みです' : '今日の記録は投稿済みです')
-        : (editYesterday ? '昨日の記録を追加できます' : '今日の習慣を記録しましょう')) + '</div></div>' +
+        ? (isPast() ? 'この日の記録は投稿済みです' : '今日の記録は投稿済みです')
+        : (isPast() ? 'あとから記録できます' : '今日の習慣を記録しましょう')) + '</div></div>' +
       miniRingHTML() +
     '</div>' +
-    '<div class="day-switch">' +
-      '<button class="dsw' + (editYesterday ? '' : ' on') + '" data-day="today">今日</button>' +
-      '<button class="dsw' + (editYesterday ? ' on' : '') + '" data-day="yesterday">昨日</button>' +
+    '<div class="day-nav">' +
+      '<button class="dnav" id="day-prev"' + (dayOffset >= maxBack() ? ' disabled' : '') + ' aria-label="前の日">‹</button>' +
+      '<input type="date" class="day-picker" id="day-pick" value="' + tk + '" ' +
+        'min="' + keyFromDate(dateByOffset(maxBack())) + '" max="' + todayKey() + '">' +
+      '<button class="dnav" id="day-next"' + (dayOffset <= 0 ? ' disabled' : '') + ' aria-label="次の日">›</button>' +
+      (isPast() ? '<button class="dnav today-btn" id="day-today">今日へ</button>' : '') +
     '</div>';
 
   // 習慣カード（最上部・すぐ届く位置）
   html += '<section class="card' + (day.posted ? ' card-done' : '') + '"><h2 class="card-title">' +
-    (editYesterday ? '昨日の習慣' : '今日の習慣') + '</h2>';
+    (isPast() ? fmtDate(dateFromKey(tk)) + 'の習慣' : '今日の習慣') + '</h2>';
   profile.habits.forEach((h) => {
     const done = day.done.includes(h.id);
     const hs = computeHabitStats(h.id);
@@ -1088,20 +1119,34 @@ function habitView() {
       '</span></button>';
   });
   if (allDone) html += '<p class="all-done">本日の習慣、すべて達成。お疲れさまでした。</p>';
-  if (webhookUrl()) {
-    html += '<button class="btn-primary post-btn" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
-      (day.posted
-        ? (editYesterday ? '昨日の記録を再投稿する' : '今日の記録を再投稿する')
-        : (editYesterday ? '昨日の記録をSlackに投稿する' : '今日の記録をSlackに投稿する')) + '</button>';
-  } else {
-    html += '<p class="note">' + (profile.group
-      ? ((GROUPS.find((g) => g.id === profile.group) || {}).label || "所属グループ") + ' のSlack通知はまだ設定されていません（管理者側で設定されます）。'
-      : 'Slack通知は現在オフになっています。') + '</p>';
-  }
+  html += '<p class="saved-hint"><span class="saved-dot"></span>' +
+    (day.done.length
+      ? 'チェックした時点で記録は保存されています'
+      : 'タップするだけで記録されます') + '</p>';
   html += '</section>';
 
+  // Slack共有は「任意」であることが分かるよう、別カードに分離
+  if (webhookUrl()) {
+    const gl = ((GROUPS.find((g) => g.id === profile.group) || {}).label || "");
+    html += '<section class="card share-card"><h2 class="card-title">仲間に共有する<span class="opt-tag">任意</span></h2>' +
+      '<p class="card-sub">' + (day.posted
+        ? '投稿済みです。チェックを変えたら、もう一度押すと更新できます。'
+        : (gl ? gl + 'のSlackに、今日の記録を投稿します。' : 'Slackに今日の記録を投稿します。') +
+          '投稿しなくても記録は残ります。') + '</p>' +
+      '<button class="btn-primary" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
+      (day.posted
+        ? (isPast() ? 'この日の記録を再投稿する' : '今日の記録を再投稿する')
+        : (isPast() ? 'この日の記録を投稿する' : '今日の記録を投稿する')) + '</button>' +
+      (day.done.length ? '' : '<p class="note" style="text-align:center;margin-bottom:0">習慣をチェックすると押せるようになります。</p>') +
+      '</section>';
+  } else {
+    html += '<section class="card"><p class="note" style="margin:0">' + (profile.group
+      ? ((GROUPS.find((g) => g.id === profile.group) || {}).label || "所属グループ") + ' のSlack通知はまだ設定されていません（管理者側で設定されます）。記録は保存されています。'
+      : 'Slack通知は現在オフになっています。記録は保存されています。') + '</p></section>';
+  }
+
   // ③ 完了感：投稿後に次の導線を出す
-  if (day.posted && !editYesterday) {
+  if (day.posted && !isPast()) {
     const jDone = !!(journals[todayKey()] && journals[todayKey()].savedAt);
     html += '<section class="card done-panel"><div class="done-mark">✓</div>' +
       '<h2 class="card-title" style="text-align:center">今日の記録は完了しました</h2>' +
@@ -1112,7 +1157,7 @@ function habitView() {
   }
 
   // ジャーナル（今日のみ）
-  if (!editYesterday) html += journalCardHTML();
+  html += journalCardHTML();
 
   // 目標は折りたたみ（毎日読むものではない）
   html += '<details class="goals-fold"><summary>この一年の目標</summary>' +
@@ -1268,7 +1313,7 @@ function journalReviewHTML() {
 
 /* ---------- journal card (習慣タブ内) ---------- */
 function journalCardHTML() {
-  const key = todayKey();
+  const key = targetKey();
   const j = journals[key] || {};
   const saved = !!j.savedAt;
   const fields = JOURNAL_QUESTIONS.map((q) =>
@@ -1276,7 +1321,8 @@ function journalCardHTML() {
     '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
   ).join("");
   return '<section class="card' + (saved ? ' card-done' : '') + '">' +
-    '<h2 class="card-title">今日のジャーナル<span class="opt-tag">任意</span></h2>' +
+    '<h2 class="card-title">' + (isPast() ? fmtDate(dateFromKey(key)) + 'のジャーナル' : '今日のジャーナル') +
+      '<span class="opt-tag">任意</span></h2>' +
     '<div class="w-line">' + weatherRowHTML("mind", "心", j.mind) + weatherRowHTML("body", "体", j.body) + '</div>' +
     fields +
     '<label class="fld-label">この日の重要度</label>' +
@@ -1711,6 +1757,8 @@ function mergeAll(cloud) {
   return changed;
 }
 
+let fetchedGroup = null;    // 名簿から取得したグループ（profile未作成でも保持）
+
 async function fetchGroup() {
   if (!signedIn()) return;
   try {
@@ -1718,12 +1766,20 @@ async function fetchGroup() {
     const { data, error } = await sb.from("member_groups")
       .select("grp").eq("email", email).maybeSingle();
     if (error) { console.error("group", error); return; }
-    const g = data && data.grp ? data.grp : "";
-    if (profile && profile.group !== g) {
-      profile.group = g;
-      persistLocal();
-    }
+    fetchedGroup = data && data.grp ? data.grp : "";
+    applyFetchedGroup();
   } catch (e) { console.error("fetchGroup", e); }
+}
+
+// オンボーディング完了後など、profileができた時点でも反映できるように
+function applyFetchedGroup() {
+  if (fetchedGroup === null || !profile) return false;
+  if (profile.group !== fetchedGroup) {
+    profile.group = fetchedGroup;
+    persistLocal();
+    return true;
+  }
+  return false;
 }
 
 async function pullAndMerge() {
@@ -2036,14 +2092,16 @@ function bindOnb() {
       habits: habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n })),
       startDate: todayKey(),
     };
+    applyFetchedGroup();
     persist();
     render();
+    fetchGroup().then(() => render());
   };
 }
 
 function bindApp() {
   try {
-  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; editYesterday = false; render(); }));
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; dayOffset = 0; render(); }));
 
   // header menu
   const mb = $("#menu-btn");
@@ -2098,10 +2156,18 @@ function bindApp() {
   if (post) post.onclick = postToday;
   if ($("#year-ring")) animateYearRing();
   if ($("#mini-ring")) animateMiniRing();
-  document.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => {
-    editYesterday = b.dataset.day === "yesterday";
+  const goDay = (n) => {
+    dayOffset = Math.max(0, Math.min(maxBack(), n));
     ringAnimated = false; render();
-  }));
+  };
+  const dp = $("#day-prev"); if (dp) dp.onclick = () => goDay(dayOffset + 1);
+  const dn = $("#day-next"); if (dn) dn.onclick = () => goDay(dayOffset - 1);
+  const dt = $("#day-today"); if (dt) dt.onclick = () => goDay(0);
+  const pick = $("#day-pick");
+  if (pick) pick.onchange = () => {
+    if (!pick.value) return;
+    goDay(daysBetween(dateFromKey(pick.value), dateFromKey(todayKey())));
+  };
   document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { tab = b.dataset.goto; ringAnimated = false; render(); }));
   const dl = $("#dl-card");
   if (dl) dl.onclick = generateCard;
