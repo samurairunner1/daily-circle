@@ -382,6 +382,12 @@ textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
 
 /* 月次レポート */
 .ms::before{background:#B08A3E}
+.ms-pick{margin-bottom:14px}
+.ms-select{
+  margin-bottom:0;font-size:14px;padding:11px 12px;
+  background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2328407A' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>") no-repeat right 14px center;
+  -webkit-appearance:none;appearance:none;
+}
 .ms-wait{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#4A4E58;padding:6px 0 2px}
 .ms-head-bar{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:13px;border-bottom:2px solid #191C22;margin-bottom:14px}
 .ms-kicker{font-size:9.5px;letter-spacing:.36em;color:#B08A3E;font-weight:700}
@@ -1421,12 +1427,27 @@ function weatherRowHTML(kind, label, current) {
 ========================================================= */
 let monthlyLoading = false;
 let monthlyReport = null;
+let monthOffset = 0;        // 0=今月, 1=先月, ...
 const W2V = { sun: 3, cloud: 2, rain: 1 };
 
-function collectMonth() {
+// 対象月の基準日（その月の1日）
+function monthBase(off) {
+  const n = appNow();
+  return new Date(n.getFullYear(), n.getMonth() - off, 1);
+}
+// 開始月まで何ヶ月さかのぼれるか
+function maxMonthBack() {
+  if (!profile || !profile.startDate) return 0;
+  const s = dateFromKey(profile.startDate), n = appNow();
+  return Math.max(0, (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth()));
+}
+
+function collectMonth(off) {
   const now = appNow();
-  const y = now.getFullYear(), mo = now.getMonth(), dim = new Date(y, mo + 1, 0).getDate();
+  const base = monthBase(off || 0);
+  const y = base.getFullYear(), mo = base.getMonth(), dim = new Date(y, mo + 1, 0).getDate();
   const ym = y + "-" + String(mo + 1).padStart(2, "0");
+  const isCurrent = (off || 0) === 0;
   const nH = profile.habits.length || 1;
 
   let rec = 0, full = 0, jr = 0, doneCnt = 0;
@@ -1436,7 +1457,7 @@ function collectMonth() {
 
   for (let i = 1; i <= dim; i++) {
     const k = ym + "-" + String(i).padStart(2, "0");
-    if (dateFromKey(k) > now) break;
+    if (isCurrent && dateFromKey(k) > now) break;
     const v = logs[k], j = journals[k];
     if (v && (v.done || []).length) {
       rec++; doneCnt += v.done.length;
@@ -1452,7 +1473,7 @@ function collectMonth() {
     if (j && j.body) body.push({ d: i, v: W2V[j.body] });
   }
 
-  const elapsed = Math.min(dim, now.getDate());
+  const elapsed = isCurrent ? Math.min(dim, now.getDate()) : dim;
   const tavDone = tavs.filter((t) => t.completedAt && t.completedAt.slice(0, 7) === ym);
   const tavOpenN = tavs.filter((t) => ["plan","over","new"].includes(tavStatus(t))).length;
   const tavSkipN = tavs.filter((t) => t.decision === "no").length;
@@ -1470,7 +1491,7 @@ function collectMonth() {
 
 function monthPrompt(m) {
   const lines = [];
-  lines.push("【対象】" + m.year + "年" + m.month + "月（" + m.elapsed + "日経過）");
+  lines.push("【対象】" + m.year + "年" + m.month + "月（" + m.elapsed + "日分）");
   lines.push("【習慣の達成状況】");
   m.habits.forEach((h) => lines.push("・" + h.name + "：" + h.done + "/" + h.total + "日"));
   lines.push("【心と体の天気】晴れ" + m.weather.sun + "日／曇り" + m.weather.cloud + "日／雨" + m.weather.rain + "日");
@@ -1489,9 +1510,10 @@ function monthPrompt(m) {
 async function runMonthly() {
   monthlyLoading = true; monthlyReport = null; render();
   try {
-    const m = collectMonth();
+    const m = collectMonth(monthOffset);
     const ai = await callAI("monthly", monthPrompt(m));
     monthlyReport = Object.assign({}, m, {
+      offset: monthOffset,
       headline: ai.headline || "",
       body_text: ai.body || "",
       question: ai.question || "",
@@ -1562,22 +1584,43 @@ function msDonut(dn, op, sk) {
     '<text x="45" y="58" text-anchor="middle" class="ms-dlab">実行</text></svg>';
 }
 
+function monthLabel(off) {
+  const b = monthBase(off);
+  return (b.getMonth() + 1) + "月" + (off === 0 ? "（今月）" : off === 1 ? "（先月）" : "");
+}
+
+function monthPickerHTML() {
+  const mb = maxMonthBack();
+  const opts = [];
+  for (let i = 0; i <= Math.min(mb, 11); i++) {
+    const b = monthBase(i);
+    opts.push('<option value="' + i + '"' + (i === monthOffset ? ' selected' : '') + '>' +
+      b.getFullYear() + '年' + (b.getMonth() + 1) + '月' +
+      (i === 0 ? '（今月）' : i === 1 ? '（先月）' : '') + '</option>');
+  }
+  if (opts.length <= 1) return "";
+  return '<div class="ms-pick"><label class="fld-label" style="margin:0">対象の月</label>' +
+    '<select class="fld ms-select" id="ms-month">' + opts.join("") + '</select></div>';
+}
+
 function monthlyHTML() {
-  const now = appNow(), r = monthlyReport;
+  const r = monthlyReport;
   if (monthlyLoading) {
-    return '<section class="card ms"><h2 class="card-title">今月のレポート</h2>' +
+    return '<section class="card ms"><h2 class="card-title">' + monthLabel(monthOffset) + 'のレポート</h2>' +
       '<div class="ms-wait"><span class="fb-dots"><i></i><i></i><i></i></span>' +
       '記録・ジャーナル・TAVを読み込んでいます…</div></section>';
   }
   if (r && r.error) {
-    return '<section class="card ms"><h2 class="card-title">今月のレポート</h2>' +
+    return '<section class="card ms"><h2 class="card-title">レポート</h2>' +
       '<p class="sync-err">作成できませんでした。<br>' + esc(r.error) + '</p>' +
+      monthPickerHTML() +
       '<button class="btn-primary" id="ms-gen">もう一度ためす</button></section>';
   }
   if (!r) {
-    return '<section class="card ms"><h2 class="card-title">今月のレポート</h2>' +
+    return '<section class="card ms"><h2 class="card-title">レポート</h2>' +
       '<p class="card-sub">習慣の達成状況、心と体の推移、ジャーナルで語られたことをまとめます。月例会の前の準備にもお使いいただけます。</p>' +
-      '<button class="btn-primary" id="ms-gen">' + (now.getMonth() + 1) + '月のレポートを作成する</button>' +
+      monthPickerHTML() +
+      '<button class="btn-primary" id="ms-gen">' + monthLabel(monthOffset) + 'のレポートを作成する</button>' +
       '<p class="note" style="text-align:center;margin-bottom:0">内容はあなたにだけ表示されます。</p></section>';
   }
 
@@ -1605,6 +1648,7 @@ function monthlyHTML() {
     '<div class="ms-head-bar"><div><div class="ms-kicker">MONTHLY REPORT</div>' +
       '<div class="ms-title">' + r.year + '年' + r.month + '月</div></div>' +
       '<button class="btn-ghost sm" id="ms-regen">作り直す</button></div>' +
+    monthPickerHTML() +
     (r.headline ? '<p class="ms-lead">' + esc(r.headline) + '</p>' : '') +
     '<div class="ms-kpis">' +
       '<div class="ms-kpi"><b>' + k.rate + '<i>%</i></b><span>達成率</span></div>' +
@@ -2625,7 +2669,7 @@ function bindOnb() {
 
 function bindApp() {
   try {
-  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; dayOffset = 0; render(); }));
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; dayOffset = 0; monthOffset = 0; monthlyReport = null; render(); }));
 
   // header menu
   const mb = $("#menu-btn");
@@ -2721,6 +2765,12 @@ function bindApp() {
     goDay(daysBetween(dateFromKey(pick.value), dateFromKey(todayKey())));
   };
   document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { tab = b.dataset.goto; ringAnimated = false; render(); }));
+  const msSel = $("#ms-month");
+  if (msSel) msSel.onchange = () => {
+    monthOffset = Number(msSel.value) || 0;
+    monthlyReport = null;          // 月を変えたら作り直し
+    render();
+  };
   const msg2 = $("#ms-gen") || $("#ms-regen");
   if (msg2) msg2.onclick = runMonthly;
   const dl = $("#dl-card");
