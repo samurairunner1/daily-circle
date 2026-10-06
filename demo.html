@@ -1,0 +1,2991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Daily Circle — 日々の記録帳</title>
+<meta name="description" content="Daily Circle — Circleの一年目標を、毎日の習慣でつなぐ記録帳。">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+<link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F7F4EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daily Circle">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+/* ===== iOS Safari 対策 ===== */
+html{-webkit-text-size-adjust:100%}
+*{-webkit-tap-highlight-color:rgba(40,64,122,.12)}
+button,input,textarea,select{
+  -webkit-appearance:none;appearance:none;
+  touch-action:manipulation;          /* ダブルタップズーム遅延を除去 */
+  font-size:16px;                     /* 16px未満だとiOSが自動ズームする */
+}
+button{touch-action:manipulation;cursor:pointer;-webkit-user-select:none;user-select:none}
+button svg{pointer-events:none}       /* SVGがタップ判定を奪わないように */
+.w-opt span,.action-name,.tab{pointer-events:none}
+.tab{pointer-events:auto}
+input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox}
+
+/* メニュー背面（外側タップで閉じる） */
+.menu-backdrop{position:fixed;inset:0;z-index:55;background:transparent}
+
+
+body{
+  min-height:100vh;background:#F7F4EE;color:#191C22;
+  font-family:'Zen Kaku Gothic New',-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+.center-msg{padding:80px 20px;text-align:center;color:#4A4E58;letter-spacing:.12em}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}
+.brand{display:flex;gap:11px;align-items:center}
+.brand-mark{width:34px;height:34px;flex-shrink:0;display:block}
+.brand-mark svg{width:100%;height:100%;display:block}
+.brand-name{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:18px;letter-spacing:.14em}
+.brand-sub{font-size:11px;color:#4A4E58;margin-top:1px;letter-spacing:.05em}
+.streak-pill{background:#191C22;color:#F7F4EE;border-radius:999px;padding:7px 15px;display:flex;align-items:baseline;gap:4px}
+.streak-num{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:18px;color:#AEC0E8;line-height:1}
+.streak-label{font-size:10px;opacity:.72;letter-spacing:.1em}
+
+/* body */
+.body{padding:12px 20px 24px;display:flex;flex-direction:column;gap:18px}
+.date-row{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.date-big{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:30px;letter-spacing:.08em}
+.date-wd{color:#4A4E58;font-size:13px;letter-spacing:.1em}
+.goals-box{display:flex;flex-direction:column;gap:8px}
+.goal-line{font-size:13px;color:#4A4E58;border-left:2px solid #28407A;padding-left:10px;line-height:1.9}
+
+.card{background:#fff;border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:26px 22px 22px;position:relative}
+.card::before{content:"";position:absolute;top:-1px;left:22px;width:44px;height:3px;background:#28407A}
+.card.danger::before{background:#4A4E58}
+.card-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16.5px;letter-spacing:.08em;margin-bottom:8px}
+.card-sub{font-size:12.5px;color:#4A4E58;margin-bottom:12px;line-height:1.9}
+
+/* habits */
+.action-row{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:transparent;border:none;border-bottom:1px solid rgba(25,28,34,.1);
+  padding:12px 2px;cursor:pointer;font-family:inherit;color:inherit;font-size:15px;
+}
+.action-row:last-of-type{border-bottom:none}
+.stamp{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  border:1.5px solid rgba(40,64,122,.35);display:flex;align-items:center;justify-content:center;
+  font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;color:transparent;
+  transition:all .25s cubic-bezier(.22,1,.36,1);
+}
+.stamp.pressed{border-color:#28407A;color:#F7F4EE;background:#28407A;box-shadow:0 4px 12px rgba(27,44,88,.24)}
+.action-row.done .action-name{color:#4A4E58}
+.action-name{font-weight:500;letter-spacing:.02em}
+.all-done{margin-top:12px;font-family:'Shippori Mincho B1',serif;color:#28407A;font-size:13.5px;text-align:center;letter-spacing:.08em}
+
+/* fields & buttons */
+.fld{
+  width:100%;border:1px solid rgba(25,28,34,.18);background:#fff;border-radius:2px;
+  padding:12px 13px;font-size:15px;font-family:inherit;color:#191C22;margin-bottom:10px;
+}
+.fld:focus{outline:2px solid #28407A;outline-offset:1px;border-color:transparent}
+textarea.fld{resize:vertical;min-height:64px;line-height:1.9}
+.fld-label{display:block;font-size:12px;font-weight:700;color:#4A4E58;margin-bottom:6px;letter-spacing:.08em;margin-top:6px}
+.btn-primary{
+  width:100%;background:#28407A;color:#F7F4EE;border:none;border-radius:999px;
+  padding:14px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.14em;transition:background .3s;
+}
+.btn-primary:hover{background:#1B2C58}
+.btn-primary:disabled{opacity:.4;cursor:default}
+.post-btn{margin-top:16px}
+.share-row{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(25,28,34,.14)}
+.saved-hint{
+  display:flex;align-items:center;gap:7px;
+  font-size:11.5px;color:#4A4E58;letter-spacing:.03em;margin-bottom:10px;
+}
+.share-row .post-btn{margin-top:0}
+.post-opt{
+  font-size:9.5px;font-weight:500;letter-spacing:.1em;margin-left:8px;
+  border:1px solid rgba(247,244,238,.45);border-radius:999px;padding:2px 7px;
+  vertical-align:1px;font-family:'Zen Kaku Gothic New',sans-serif;
+}
+.btn-primary:disabled .post-opt{border-color:rgba(247,244,238,.3)}
+.share-note{font-size:11px;color:#4A4E58;line-height:1.8;margin-top:8px;text-align:center}
+.saved-dot{width:7px;height:7px;border-radius:50%;background:#28407A;flex-shrink:0}
+.share-card::before{background:#B08A3E}
+.btn-ghost{
+  background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:10px;
+  font-family:inherit;font-size:13px;color:#4A4E58;cursor:pointer;width:100%;margin-bottom:10px;letter-spacing:.06em;
+}
+.btn-danger{width:100%;background:#7A2828;color:#fff;border:none;border-radius:999px;padding:12px;font-family:inherit;font-weight:700;cursor:pointer;letter-spacing:.1em}
+.note{font-size:11.5px;color:#4A4E58;margin-top:10px;line-height:1.9}
+
+/* stats */
+.stat-band{display:flex;gap:1px;border-radius:2px;overflow:hidden}
+.stat{flex:1;background:#191C22;color:#F7F4EE;padding:16px 8px 13px;text-align:center}
+.stat-val{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:21px;color:#AEC0E8;line-height:1.2}
+.stat-label{font-size:10px;opacity:.66;margin-top:4px;letter-spacing:.14em}
+
+/* year grid */
+.year-grid{display:flex;flex-direction:column;gap:5px}
+.month-row{display:flex;align-items:center;gap:8px}
+.month-label{width:32px;font-size:10px;color:#4A4E58;font-family:'Shippori Mincho B1',serif;flex-shrink:0;text-align:right;letter-spacing:.04em}
+.day-cells{display:flex;gap:2px;flex-wrap:wrap}
+.cell{width:8px;height:8px;border-radius:50%;display:inline-block}
+.glegend{display:flex;gap:16px;font-size:11px;color:#4A4E58;margin-top:14px;justify-content:center;letter-spacing:.06em;flex-wrap:wrap}
+.gd{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+.gd-full{background:#28407A}
+.gd-part{background:transparent;border:1.5px solid #28407A}
+.gd-none{background:#EDEAE1}
+
+/* habit rows */
+.habit-row{padding:12px 0;border-bottom:1px solid rgba(25,28,34,.08)}
+.habit-row:last-child{border-bottom:none}
+.habit-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.habit-name{font-size:14px;font-weight:700;letter-spacing:.02em}
+.habit-meta{font-size:11px;color:#4A4E58;white-space:nowrap}
+.habit-meta em{font-style:normal;color:#B08A3E;font-weight:700}
+.habit-meta b{font-weight:700;color:#28407A}
+.habit-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:8px}
+.hd{width:9px;height:9px;border-radius:50%;background:#EDEAE1;display:inline-block}
+.hd.on{background:#28407A}
+
+/* onboarding */
+.onb{padding:52px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.onb-mark{width:56px;height:56px;margin-bottom:18px}
+.onb-mark svg{width:100%;height:100%;display:block}
+.onb-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:23px;letter-spacing:.16em;margin-bottom:6px}
+.onb-tate{font-size:11px;letter-spacing:.4em;color:#28407A;font-weight:500;margin-bottom:16px}
+.onb-lead{font-size:13px;color:#4A4E58;line-height:2.1;max-width:340px;margin-bottom:26px}
+.onb-card{
+  width:100%;max-width:360px;text-align:left;background:#fff;
+  border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:24px 20px;position:relative;
+}
+.onb-card::before{content:"";position:absolute;top:-1px;left:20px;width:44px;height:3px;background:#28407A}
+
+/* tabs */
+.tabs{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:520px;display:flex;background:rgba(247,244,238,.96);
+  backdrop-filter:blur(4px);
+  border-top:1px solid rgba(25,28,34,.14);padding:6px 8px calc(10px + env(safe-area-inset-bottom,0px));z-index:40;
+}
+.tab{
+  flex:1;background:transparent;border:none;font-family:'Shippori Mincho B1',serif;
+  font-weight:700;font-size:14px;letter-spacing:.2em;color:#4A4E58;padding:15px 4px;cursor:pointer;min-height:48px;
+  position:relative;transition:color .3s;
+}
+.tab.on{color:#28407A}
+.tab.on::after{
+  content:"";position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;background:#28407A;
+}
+.toast{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+  background:#1B2C58;color:#F7F4EE;padding:10px 20px;border-radius:999px;
+  font-size:12.5px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(27,44,88,.28);z-index:50;white-space:nowrap;pointer-events:none;
+  max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* v2: day head + mini ring */
+.day-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:8px 0 2px}
+.day-sub{font-size:11.5px;color:#4A4E58;letter-spacing:.04em;margin-top:5px}
+.mini-ring{position:relative;width:66px;height:66px;flex-shrink:0}
+.mini-ring svg{width:100%;height:100%;display:block}
+.mini-ring-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.mini-ring-txt small{font-size:10px;font-weight:500;color:#4A4E58;margin-left:1px}
+.mini-ring.gold .mini-ring-txt{color:#B08A3E}
+
+/* v2: habit rows with streak */
+.action-body{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.action-streak{font-size:10.5px;color:#B08A3E;font-weight:700;letter-spacing:.06em}
+.card-done::before{background:#B08A3E}
+
+/* v2: completion panel */
+.done-panel{text-align:center}
+.done-panel::before{background:#B08A3E}
+.done-mark{width:46px;height:46px;border-radius:50%;background:#B08A3E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px}
+.done-panel .btn-ghost{margin-top:4px}
+
+/* v2: goals fold */
+.goals-fold{border-top:1px solid rgba(25,28,34,.12);padding-top:14px}
+.goals-fold summary{cursor:pointer;list-style:none;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;color:#4A4E58;position:relative;padding-right:20px}
+.goals-fold summary::-webkit-details-marker{display:none}
+.goals-fold summary::after{content:"";position:absolute;right:4px;top:.36em;width:8px;height:8px;border-right:1.5px solid #28407A;border-bottom:1.5px solid #28407A;transform:rotate(45deg);transition:transform .3s}
+.goals-fold[open] summary::after{transform:rotate(-135deg);top:.6em}
+.goals-fold .goals-box{margin-top:12px}
+
+/* v2: tab indicators */
+.tab{display:flex;align-items:center;justify-content:center;gap:5px}
+.tab-dot{width:5px;height:5px;border-radius:50%;background:rgba(40,64,122,.42);display:inline-block}
+.tab.on .tab-dot{background:#28407A}
+.tab-badge{min-width:17px;height:17px;border-radius:999px;background:#7A2828;color:#fff;font-family:'Zen Kaku Gothic New',sans-serif;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;letter-spacing:0}
+.tab.on::after{bottom:4px}
+
+/* v3: journal in habit tab */
+.opt-tag{font-size:10px;font-weight:500;letter-spacing:.1em;color:#4A4E58;border:1px solid rgba(25,28,34,.2);border-radius:999px;padding:2px 8px;margin-left:9px;vertical-align:2px;font-family:'Zen Kaku Gothic New',sans-serif}
+
+/* v3: journal review */
+.jrv-list{margin-top:20px}
+.jrv-month{margin-bottom:18px}
+.jrv-month-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13px;letter-spacing:.08em;color:#28407A;padding-bottom:7px;border-bottom:1px solid rgba(25,28,34,.12);display:flex;justify-content:space-between;align-items:baseline}
+.jrv-month-label span{font-size:10.5px;color:#4A4E58;font-family:'Zen Kaku Gothic New',sans-serif;font-weight:500;letter-spacing:.06em}
+.jrv{border-bottom:1px solid rgba(25,28,34,.07)}
+.jrv summary{cursor:pointer;list-style:none;padding:11px 18px 11px 0;display:flex;gap:11px;align-items:baseline;position:relative}
+.jrv summary::-webkit-details-marker{display:none}
+.jrv summary::after{content:"";position:absolute;right:3px;top:1.15em;width:7px;height:7px;border-right:1.4px solid rgba(40,64,122,.5);border-bottom:1.4px solid rgba(40,64,122,.5);transform:rotate(45deg);transition:transform .25s}
+.jrv[open] summary::after{transform:rotate(-135deg);top:1.35em}
+.jrv-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;color:#B08A3E;flex-shrink:0;min-width:34px}
+.jrv-peek{font-size:12px;color:#4A4E58;line-height:1.7;overflow:hidden}
+.jrv-body{padding:2px 0 14px}
+.jrv-q{font-size:11px;font-weight:700;color:#28407A;letter-spacing:.04em;margin-top:10px}
+.jrv-a{font-size:13px;color:#191C22;line-height:2;margin-top:3px;white-space:pre-wrap}
+
+/* v3: journal stars */
+.stars{display:flex;align-items:center;gap:5px;margin:2px 0 16px}
+.star{width:40px;height:40px;padding:0;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.star svg{width:26px;height:26px;fill:none;stroke:rgba(40,64,122,.35);stroke-width:1.6;transition:all .18s ease}
+.star.on svg{fill:#B08A3E;stroke:#B08A3E}
+.star:hover svg{stroke:#B08A3E}
+.star-clear{font-size:10.5px;color:#4A4E58;margin-left:6px;cursor:pointer;letter-spacing:.06em;text-decoration:underline;text-underline-offset:2px}
+.jrv-stars{font-size:11px;color:#B08A3E;letter-spacing:.06em;flex-shrink:0}
+
+/* v3: weather selector (心・体 それぞれフル幅1行) */
+.w-line{display:flex;flex-direction:column;gap:6px;margin:2px 0 14px}
+.w-unit{display:flex;align-items:center;gap:9px}
+.w-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.1em;color:#191C22;width:20px;flex-shrink:0}
+.w-opts{display:flex;gap:6px;flex:1}
+.w-opt{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:13px 4px;min-height:46px;border:1px solid rgba(25,28,34,.16);border-radius:2px;
+  background:#fff;cursor:pointer;transition:all .18s ease;font-family:inherit;
+}
+.w-opt svg{width:22px;height:22px;flex-shrink:0}
+.w-opt span{font-size:11.5px;color:#4A4E58;letter-spacing:.06em}
+.w-opt .w-fill{fill:rgba(25,28,34,.2)}
+.w-opt .w-stroke{stroke:rgba(25,28,34,.2);stroke-width:2;stroke-linecap:round}
+.w-opt.on{border-color:#28407A;background:rgba(40,64,122,.07)}
+.w-opt.on .w-fill{fill:#28407A}
+.w-opt.on .w-stroke{stroke:#28407A}
+.w-opt.on span{color:#28407A;font-weight:700}
+.jr-ta{min-height:52px}
+
+/* v3: weather grid */
+.wg{margin-top:20px}
+.wg-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;color:#28407A;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+.wg-title span{font-family:'Zen Kaku Gothic New',sans-serif;font-size:10.5px;font-weight:500;color:#4A4E58;letter-spacing:.04em}
+
+/* v3: weather icon in list */
+.jrv-ws{display:inline-flex;gap:3px;flex-shrink:0;align-items:center}
+.jrv-w svg{width:15px;height:15px;display:block}
+.jrv-w .w-fill{fill:rgba(40,64,122,.62)}
+.jrv-w .w-stroke{stroke:rgba(40,64,122,.62);stroke-width:2.2;stroke-linecap:round}
+
+/* v3: TAV review list */
+.tvr-list{margin-top:4px}
+.tvr{border-bottom:1px solid rgba(25,28,34,.08)}
+.tvr:last-child{border-bottom:none}
+.tvr summary{cursor:pointer;list-style:none;padding:11px 18px 11px 0;display:flex;gap:11px;align-items:baseline;position:relative}
+.tvr summary::-webkit-details-marker{display:none}
+.tvr summary::after{content:"";position:absolute;right:3px;top:1.15em;width:7px;height:7px;border-right:1.4px solid rgba(40,64,122,.5);border-bottom:1.4px solid rgba(40,64,122,.5);transform:rotate(45deg);transition:transform .25s}
+.tvr[open] summary::after{transform:rotate(-135deg);top:1.35em}
+.tvr-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;color:#B08A3E;flex-shrink:0;min-width:32px}
+.tvr-title{font-size:13px;font-weight:700;line-height:1.7;color:#191C22}
+.tvr-body{padding:2px 0 14px}
+.tvr-q{font-size:10px;font-weight:700;letter-spacing:.14em;color:#B08A3E;margin-top:9px}
+.tvr-a{font-size:12.5px;color:#191C22;line-height:1.95;margin-top:3px;white-space:pre-wrap}
+
+/* v3: day switch (昨日編集) */
+.day-nav{display:flex;gap:6px;align-items:center;margin:4px 0 6px}
+.dnav{
+  min-width:38px;height:38px;border:1px solid rgba(25,28,34,.16);border-radius:999px;
+  background:transparent;font-size:17px;line-height:1;color:#28407A;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;
+}
+.dnav:disabled{opacity:.28;cursor:default}
+.dnav.today-btn{
+  width:auto;padding:0 14px;font-family:'Shippori Mincho B1',serif;font-weight:700;
+  font-size:12px;letter-spacing:.08em;
+}
+.day-picker{
+  flex:1;min-width:0;height:38px;border:1px solid rgba(25,28,34,.16);border-radius:999px;
+  background:#fff;padding:0 12px;font-family:inherit;font-size:13px;color:#191C22;
+  text-align:center;-webkit-appearance:none;appearance:none;
+}
+.yst-tag{font-size:10px;font-weight:700;letter-spacing:.1em;background:#B08A3E;color:#fff;border-radius:999px;padding:3px 9px;margin-left:9px;vertical-align:3px;font-family:'Zen Kaku Gothic New',sans-serif}
+
+/* v3: settings habit rows */
+.st-hrow{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.st-hrow .fld{margin-bottom:0;flex:1}
+.st-hmove{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.st-mv{width:26px;height:19px;border:1px solid rgba(25,28,34,.16);background:#fff;border-radius:2px;font-size:8px;color:#28407A;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;justify-content:center}
+.st-mv:disabled{opacity:.28;cursor:default}
+.st-hdel{width:28px;height:28px;border:none;background:transparent;color:rgba(25,28,34,.32);font-size:19px;cursor:pointer;padding:0;flex-shrink:0;line-height:1}
+.st-hdel:hover:not(:disabled){color:#7A2828}
+.st-hdel:disabled{opacity:.2;cursor:default}
+
+.grp-fixed{
+  display:flex;align-items:baseline;gap:10px;padding:12px 14px;margin-bottom:10px;
+  border:1px solid rgba(40,64,122,.3);background:rgba(40,64,122,.06);border-radius:2px;
+}
+.grp-fixed.none{color:#4A4E58;font-size:13px;border-color:rgba(25,28,34,.18);background:#fff}
+
+.grp{display:flex;gap:8px;margin-bottom:14px}
+.grp-opt{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:13px 6px;border:1px solid rgba(25,28,34,.18);border-radius:2px;
+  background:#fff;cursor:pointer;font-family:inherit;transition:all .18s ease;
+}
+.grp-name{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;color:#191C22}
+.grp-note{font-size:10px;color:#4A4E58;letter-spacing:.02em}
+.grp-opt.on{border-color:#28407A;background:rgba(40,64,122,.07)}
+.grp-opt.on .grp-name{color:#28407A}
+
+.code-row{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
+.code-row .code-input{flex:1;margin-bottom:0}
+.code-paste{
+  flex-shrink:0;padding:0 16px;border:1px solid rgba(40,64,122,.35);border-radius:2px;
+  background:rgba(40,64,122,.07);color:#28407A;font-family:inherit;font-size:12.5px;
+  font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;
+}
+.code-paste:active{background:rgba(40,64,122,.16)}
+
+.code-input{
+  font-family:'Shippori Mincho B1',serif;font-size:24px;letter-spacing:.24em;
+  text-align:center;padding:14px 8px 14px 16px;font-weight:700;
+}
+.sync-err{font-size:11.5px;color:#7A2828;line-height:1.85;background:rgba(122,40,40,.06);border:1px solid rgba(122,40,40,.25);border-radius:2px;padding:9px 11px;margin-bottom:10px;word-break:break-word}
+
+/* sync badge */
+.sync-badge{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;transition:background .3s}
+.sync-badge.s-off{background:rgba(25,28,34,.2)}
+.sync-badge.s-ready,.sync-badge.s-syncing{background:#B08A3E}
+.sync-badge.s-saved{background:#28407A}
+.sync-badge.s-error{background:#7A2828}
+
+/* AIフィードバック */
+.fb{margin-top:16px;border:1px solid rgba(176,138,62,.35);background:rgba(176,138,62,.05);border-radius:2px;padding:14px 14px 13px}
+.fb-err{border-color:rgba(122,40,40,.3);background:rgba(122,40,40,.04)}
+.fb-head{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.fb-mark{color:#B08A3E;font-size:12px}
+.fb-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;letter-spacing:.12em;color:#B08A3E}
+.fb-private{margin-left:auto;font-size:9.5px;letter-spacing:.08em;color:#4A4E58;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:2px 7px}
+.fb-prelude{font-size:12px;color:#4A4E58;line-height:1.95}
+.fb-q{font-family:'Shippori Mincho B1',serif;font-size:14px;line-height:2;color:#191C22;margin-top:7px}
+.fb-wait{display:flex;align-items:center;gap:9px;font-size:12px;color:#4A4E58}
+.fb-dots{display:inline-flex;gap:3px}
+.fb-dots i{width:5px;height:5px;border-radius:50%;background:#B08A3E;display:block;animation:fbd 1.1s infinite ease-in-out}
+.fb-dots i:nth-child(2){animation-delay:.16s}
+.fb-dots i:nth-child(3){animation-delay:.32s}
+@keyframes fbd{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.fb .btn-ghost.sm{width:auto;padding:6px 14px;margin:8px 0 0;font-size:11.5px}
+
+/* 月次レポート */
+.ms::before{background:#B08A3E}
+.mile{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.m-item{flex:1;min-width:76px;border:1px solid rgba(25,28,34,.14);border-radius:2px;padding:11px 6px;text-align:center;background:#fff}
+.m-item.got{border-color:#B08A3E;background:rgba(176,138,62,.08)}
+.m-item b{display:block;font-family:'Shippori Mincho B1',serif;font-size:16px;color:#4A4E58}
+.m-item.got b{color:#B08A3E}
+.m-item span{display:block;font-size:9.5px;color:#4A4E58;margin-top:3px}
+.empty-box{border:1px dashed rgba(25,28,34,.2);border-radius:2px;padding:22px 16px;text-align:center;background:rgba(255,255,255,.45)}
+.empty-box .em-i{font-size:20px;color:#B08A3E;margin-bottom:8px}
+.empty-box p{font-size:12.5px;color:#4A4E58;line-height:1.95}
+
+.ms-pick{margin-bottom:14px}
+.ms-select{
+  margin-bottom:0;font-size:14px;padding:11px 12px;
+  background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2328407A' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>") no-repeat right 14px center;
+  -webkit-appearance:none;appearance:none;
+}
+.ms-wait{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#4A4E58;padding:6px 0 2px}
+.ms-head-bar{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:13px;border-bottom:2px solid #191C22;margin-bottom:14px}
+.ms-kicker{font-size:9.5px;letter-spacing:.36em;color:#B08A3E;font-weight:700}
+.ms-title{font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:23px;letter-spacing:.06em;margin-top:5px}
+.ms-lead{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;line-height:1.95;letter-spacing:.04em;border-left:3px solid #B08A3E;padding-left:12px;margin-bottom:16px}
+.ms-kpis{display:flex;gap:1px;background:rgba(25,28,34,.1);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.ms-kpi{flex:1;background:#191C22;padding:14px 2px 11px;text-align:center}
+.ms-kpi b{display:block;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:21px;color:#AEC0E8;line-height:1.1}
+.ms-kpi b i{font-style:normal;font-size:11px;margin-left:1px}
+.ms-kpi span{display:block;font-size:9px;color:rgba(247,244,238,.6);margin-top:4px;letter-spacing:.08em}
+.ms-sec{display:flex;align-items:center;gap:9px;margin:22px 0 11px}
+.ms-no{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:10px;letter-spacing:.1em;background:#28407A;color:#F7F4EE;border-radius:999px;padding:3px 9px;flex-shrink:0}
+.ms-sec h3{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:14px;letter-spacing:.1em}
+.ms-note{font-size:11.5px;color:#4A4E58;line-height:1.85;margin:-4px 0 10px}
+.ms-hb{margin-bottom:12px}
+.ms-hb-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+.ms-hb-top b{font-family:'Shippori Mincho B1',serif;font-size:14px;color:#28407A}
+.ms-hb-track{height:8px;background:#EDEAE1;border-radius:999px;overflow:hidden;margin-top:5px}
+.ms-hb-fill{height:100%;background:linear-gradient(90deg,#1B2C58,#28407A);border-radius:999px}
+.ms-hb-sub{font-size:10px;color:#4A4E58;margin-top:3px}
+.ms-chart{width:100%;height:96px;display:block}
+.ms-legend{display:flex;gap:14px;align-items:center;font-size:10.5px;color:#4A4E58;margin-top:7px}
+.ms-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+.ms-legend-note{margin-left:auto;font-size:9.5px;opacity:.75}
+.ms-weather{margin-top:12px}
+.ms-wrow{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.ms-wlabel{font-size:11px;color:#4A4E58;width:28px;flex-shrink:0}
+.ms-wtrack{flex:1;height:7px;background:#EDEAE1;border-radius:999px;overflow:hidden}
+.ms-wfill{height:100%;border-radius:999px}
+.ms-wfill.w-sun{background:#28407A}
+.ms-wfill.w-cloud{background:rgba(40,64,122,.42)}
+.ms-wfill.w-rain{background:rgba(40,64,122,.18)}
+.ms-wnum{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12px;color:#4A4E58;width:16px;text-align:right}
+.ms-radar-wrap{display:flex;justify-content:center;padding:2px 0}
+.ms-radar{width:100%;max-width:250px;height:auto}
+.ms-raxis{font-family:'Zen Kaku Gothic New',sans-serif;font-size:9.5px;fill:#4A4E58;letter-spacing:.04em}
+.ms-th{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ms-th-rank{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:11px;color:#B08A3E;width:12px;flex-shrink:0}
+.ms-th-body{flex:1;min-width:0}
+.ms-th-name{font-size:12.5px;line-height:1.6}
+.ms-th-track{height:5px;background:#EDEAE1;border-radius:999px;overflow:hidden;margin-top:4px}
+.ms-th-fill{height:100%;background:#B08A3E;border-radius:999px}
+.ms-tav{display:flex;align-items:center;gap:20px}
+.ms-donut{width:96px;height:96px;flex-shrink:0}
+.ms-dnum{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:20px;fill:#191C22}
+.ms-dlab{font-family:'Zen Kaku Gothic New',sans-serif;font-size:7.5px;fill:#4A4E58;letter-spacing:.1em}
+.ms-tav-legend{display:flex;flex-direction:column;gap:7px;font-size:11.5px;color:#4A4E58}
+.ms-tav-legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:7px}
+.ms-tav-legend b{font-family:'Shippori Mincho B1',serif;color:#191C22;margin-left:4px}
+.ms-body p{font-size:13px;line-height:2.05;color:#191C22;margin-bottom:11px}
+.ms-q{margin-top:16px}
+
+.demo-bar{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  background:#B08A3E;color:#F7F4EE;text-align:center;
+  font-size:10.5px;letter-spacing:.08em;padding:6px 10px;
+  padding-top:calc(6px + env(safe-area-inset-top,0px));
+}
+.app{padding-top:28px}
+
+/* header menu */
+.top-right{display:flex;align-items:center;gap:8px;position:relative}
+.menu-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(25,28,34,.16);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.menu-btn svg{width:19px;height:19px}
+.menu-pop{position:absolute;top:44px;right:0;background:#fff;border:1px solid rgba(25,28,34,.16);border-radius:2px;box-shadow:0 10px 30px rgba(25,28,34,.16);z-index:60;min-width:172px;overflow:hidden}
+.menu-item{display:block;width:100%;text-align:left;background:transparent;border:none;border-bottom:1px solid rgba(25,28,34,.08);padding:14px 18px;font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:14px;letter-spacing:.06em;color:#191C22;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:#F7F4EE}
+
+/* overlay pages */
+.ov{min-height:100vh;background:#F7F4EE}
+.ov-bar{display:flex;align-items:center;gap:12px;padding:18px 20px 6px;position:sticky;top:0;background:rgba(247,244,238,.96);backdrop-filter:blur(4px);z-index:30}
+.ov-back{width:36px;height:36px;border-radius:50%;border:1px solid rgba(25,28,34,.16);background:transparent;font-size:16px;color:#191C22;cursor:pointer;line-height:1}
+.ov-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:.12em}
+
+/* journal */
+.chk{display:flex;align-items:center;gap:9px;margin:4px 0 14px;font-size:13px;color:#4A4E58;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:#28407A;cursor:pointer}
+.jr-past{padding:12px 0;border-bottom:1px solid rgba(25,28,34,.08)}
+.jr-past:last-child{border-bottom:none}
+.jr-past-date{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:12.5px;color:#28407A;letter-spacing:.06em}
+.jr-past-body{font-size:12.5px;color:#4A4E58;line-height:1.9;margin-top:4px}
+
+/* TAV */
+.chips{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.chip{background:transparent;border:1px solid rgba(25,28,34,.18);border-radius:999px;padding:7px 13px;font-family:inherit;font-size:11.5px;color:#4A4E58;cursor:pointer;letter-spacing:.04em}
+.chip.on{background:#28407A;border-color:#28407A;color:#F7F4EE;font-weight:700}
+.tav-search{margin-bottom:14px;font-size:13px;padding:10px 12px}
+.bulk-ta{min-height:130px;line-height:1.95}
+.tav-qnote{display:flex;align-items:center;gap:10px;font-size:11.5px;color:#4A4E58;margin-bottom:12px}
+.tav-qclear{margin-left:auto;background:transparent;border:none;padding:0;font-family:inherit;font-size:11px;color:#28407A;cursor:pointer;text-decoration:underline}
+
+/* グループ見出し */
+.tav-group{margin-bottom:18px}
+.tav-group:last-child{margin-bottom:0}
+.tav-gh{
+  display:flex;align-items:center;gap:8px;font-family:'Shippori Mincho B1',serif;
+  font-weight:700;font-size:12px;letter-spacing:.12em;color:#4A4E58;
+  padding-bottom:7px;margin-bottom:9px;border-bottom:1px solid rgba(25,28,34,.12);
+}
+.tav-gh span{
+  font-family:'Zen Kaku Gothic New',sans-serif;font-size:10px;font-weight:700;
+  background:rgba(25,28,34,.08);border-radius:999px;padding:2px 7px;letter-spacing:0;
+}
+.tav-gh.g-over{color:#7A2828;border-color:rgba(122,40,40,.3)}
+.tav-gh.g-over span{background:rgba(122,40,40,.12);color:#7A2828}
+.tav-gh.g-today{color:#B08A3E;border-color:rgba(176,138,62,.35)}
+.tav-gh.g-today span{background:rgba(176,138,62,.14);color:#B08A3E}
+.tav-gh.g-week{color:#28407A}
+
+/* カード */
+.tav{border:1px solid rgba(25,28,34,.12);border-radius:2px;margin-bottom:7px;background:#fff;overflow:hidden}
+.tav.open{border-color:rgba(25,28,34,.2)}
+.tav-over{border-color:rgba(122,40,40,.35);background:#FDF8F7}
+.tav-done{background:#FAFAF7;opacity:.9}
+.tav-no{opacity:.6}
+.tav-row{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  background:transparent;border:none;padding:13px 13px;cursor:pointer;
+  font-family:inherit;color:inherit;
+}
+.tav-title{flex:1;font-size:13.5px;line-height:1.6;font-weight:700;letter-spacing:.01em;min-width:0}
+.tav-done .tav-title{font-weight:500;color:#4A4E58}
+.tav-due{
+  flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  padding:3px 8px;border-radius:999px;white-space:nowrap;
+}
+.d-over{background:#7A2828;color:#fff}
+.d-today{background:rgba(176,138,62,.16);color:#B08A3E}
+.d-soon{background:rgba(40,64,122,.1);color:#28407A}
+.d-later{background:transparent;color:#4A4E58;font-weight:500}
+.tav-check{flex-shrink:0;color:#B08A3E;font-size:14px}
+.tav-body{padding:0 13px 13px;border-top:1px dashed rgba(25,28,34,.1);margin-top:-1px;padding-top:11px}
+.tav-memo{font-size:12.5px;color:#4A4E58;line-height:1.9}
+.tav-date{font-size:11px;color:#4A4E58;margin-top:7px}
+.tav-review{font-size:12.5px;color:#191C22;line-height:1.9;margin-top:9px;padding:9px 11px;background:#F7F4EE;border-left:2px solid #B08A3E}
+.tav-review span{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:.14em;color:#B08A3E;margin-bottom:3px}
+.tav-eff{font-size:9.5px;font-weight:700;letter-spacing:.04em;border-radius:999px;padding:2px 7px}
+.tav-eff.e-good{background:rgba(40,64,122,.12);color:#28407A}
+.tav-eff.e-meh{background:rgba(25,28,34,.08);color:#4A4E58}
+.tav-actions{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+.tav-actions .btn-ghost.sm{width:auto;padding:6px 12px;margin:0;font-size:11.5px}
+.tav-del{
+  display:block;margin-top:11px;background:transparent;border:none;padding:0;
+  font-family:inherit;font-size:11px;color:rgba(25,28,34,.35);cursor:pointer;text-decoration:underline;
+}
+.tav-del:hover{color:#7A2828}
+
+/* 手ごたえ */
+.eff{display:flex;gap:7px;margin-bottom:14px}
+.eff-opt{
+  flex:1;padding:11px 6px;border:1px solid rgba(25,28,34,.18);border-radius:2px;
+  background:#fff;font-family:inherit;font-size:12.5px;color:#4A4E58;cursor:pointer;
+}
+.eff-opt.on{border-color:#28407A;background:rgba(40,64,122,.07);color:#28407A;font-weight:700}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(25,28,34,.55);display:flex;align-items:center;justify-content:center;z-index:120;padding:24px}
+.modal-card{background:#fff;border-radius:2px;padding:26px 22px 20px;max-width:360px;width:100%;position:relative;max-height:86vh;overflow:auto}
+.modal-card::before{content:"";position:absolute;top:0;left:22px;width:44px;height:3px;background:#28407A}
+.modal-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;letter-spacing:.06em;margin-bottom:14px}
+.modal-btns{display:flex;gap:9px;margin-top:6px}
+.modal-btns .btn-ghost{margin:0;flex:1}
+.modal-btns .btn-primary,.modal-btns .btn-danger{flex:1.4;padding:11px;font-size:13.5px}
+
+/* year ring */
+.ring-wrap{position:relative;max-width:270px;margin:10px auto 0;width:82%}
+.ring-wrap svg{width:100%;height:auto;display:block}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+.ring-pct{font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:42px;line-height:1;letter-spacing:.02em}
+.ring-pct small{font-size:20px;font-weight:700;margin-left:2px}
+.ring-days{font-size:11px;color:#4A4E58;margin-top:8px;letter-spacing:.08em}
+
+/* milestone celebration */
+.celebrate{position:fixed;inset:0;background:rgba(25,28,34,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;cursor:pointer}
+.celebrate-card{background:#F7F4EE;border-radius:2px;border:1px solid rgba(25,28,34,.2);padding:52px 40px 40px;text-align:center;max-width:340px;width:100%;position:relative}
+.celebrate-card::before{content:"";position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:80px;height:4px;background:#B08A3E}
+.celebrate-kicker{font-size:11px;letter-spacing:.4em;color:#B08A3E;font-weight:700}
+.celebrate-num{font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:88px;color:#28407A;line-height:1.1;margin-top:14px}
+.celebrate-num small{font-size:30px;margin-left:4px}
+.celebrate-label{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:17px;letter-spacing:.08em;margin-top:8px}
+.celebrate-msg{font-size:13px;color:#4A4E58;line-height:2;margin-top:16px}
+.celebrate-close{font-size:10.5px;color:#4A4E58;letter-spacing:.2em;margin-top:24px}
+@media (prefers-reduced-motion: reduce){ .stamp,.tab{transition:none} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div class="demo-bar">DEMO ─ サンプルデータで動いています。Slackには投稿されません。</div>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   ★ 管理者設定：Slack通知先（グループ別）
+   それぞれのチャンネルの Incoming Webhook URL を
+   base64に変換して貼り付けます。
+
+   変換方法：ブラウザで F12 → Console を開き、次を実行
+     btoa("https://hooks.slack.com/services/T000/B000/XXXX")
+
+   ※ 片方だけ設定した場合、もう一方のグループには通知されません。
+========================================================= */
+const SLACK_WEBHOOK_A_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBDNkpIQ0czSzgvRFEyS1dqTGFqTnNvR0VXd2RMODhGaXFq";
+const SLACK_WEBHOOK_B_B64 = "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDBBNVFQQ01FQTEvQjBDNlE2UThLTjAvenVYUkNZWGxMcjU1VWxCM25jMGZKeXlJ";
+
+const GROUPS = [
+  { id: "A",  label: "グループA",   note: "第3水 19:00〜22:00" },
+  { id: "B",  label: "グループB",   note: "第4水 13:00〜16:00" },
+  { id: "AB", label: "グループA・B", note: "両方のチャンネルに投稿されます" },
+];
+const dec = (s) => { try { return s ? atob(s) : ""; } catch (e) { return ""; } };
+const SLACK_WEBHOOKS = { A: dec(SLACK_WEBHOOK_A_B64), B: dec(SLACK_WEBHOOK_B_B64) };
+
+/* =========================================================
+   ★ 同期設定（Supabase）
+   空のままなら、これまで通り「この端末だけ」で動作します。
+========================================================= */
+const SUPABASE_URL = "";   // デモではログイン不要
+const SUPABASE_ANON_KEY = "";
+
+/* ---------- helpers ---------- */
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const DAY_SHIFT_MS = 3 * 3600 * 1000; // 深夜3時までは前日としてカウント
+const appNow = () => new Date(Date.now() - DAY_SHIFT_MS);
+const todayKey = () => keyFromDate(appNow());
+function keyFromDate(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function dateFromKey(k) {
+  const [y, m, d] = k.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+const daysBetween = (a, b) => Math.floor((b - a) / 86400000);
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+function persistLocal() {
+  localStorage.setItem("demo_profile", JSON.stringify(profile));
+  localStorage.setItem("demo_logs", JSON.stringify(logs));
+  localStorage.setItem("demo_journals", JSON.stringify(journals));
+  localStorage.setItem("demo_tavs", JSON.stringify(tavs));
+}
+function persist() {
+  persistLocal();
+  try { schedulePush(); } catch (e) {}
+}
+const prefersReduced = () => {
+  try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch (e) { return false; }
+};
+
+const hasHabits = () => !!(profile && profile.habits && profile.habits.length);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+/* ---------- state ---------- */
+
+/* =========================================================
+   デモ用のサンプルデータ
+   ・保存先は本番と分離（demo_*）されています
+   ・右上メニューの「サンプルに戻す」でいつでも初期状態へ
+========================================================= */
+const DEMO_SEED = {"profile": {"name": "巧", "goals": ["フルマラソンで自己ベストを更新する", "英語で商談を完結できるようになる", "任せる範囲を広げて、週1日を構想に使う"], "habits": [{"id": "h1", "name": "朝ラン10km"}, {"id": "h2", "name": "英語30分"}, {"id": "h3", "name": "読書20ページ"}, {"id": "h4", "name": "家族と夕食"}], "startDate": "2026-07-06", "group": "A", "celebrated": [7, 30]}, "logs": {"2026-07-06": {"done": ["h2", "h3", "h4"], "posted": true}, "2026-07-07": {"done": ["h3", "h4"], "posted": true}, "2026-07-08": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-07-09": {"done": ["h1", "h2"], "posted": true}, "2026-07-10": {"done": ["h3", "h4"]}, "2026-07-11": {"done": ["h1", "h2", "h3"], "posted": true}, "2026-07-13": {"done": ["h1"]}, "2026-07-14": {"done": ["h1", "h3", "h4"], "posted": true}, "2026-07-15": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-07-16": {"done": ["h1", "h2", "h3", "h4"]}, "2026-07-17": {"done": ["h3"], "posted": true}, "2026-07-18": {"done": ["h1"], "posted": true}, "2026-07-19": {"done": ["h3", "h4"], "posted": true}, "2026-07-20": {"done": ["h1", "h2"], "posted": true}, "2026-07-21": {"done": ["h2", "h4"], "posted": true}, "2026-07-22": {"done": ["h1", "h3"]}, "2026-07-23": {"done": ["h1", "h2"], "posted": true}, "2026-07-24": {"done": ["h1", "h2"], "posted": true}, "2026-07-25": {"done": ["h1", "h2"]}, "2026-07-26": {"done": ["h2"], "posted": true}, "2026-07-27": {"done": ["h1", "h3", "h4"], "posted": true}, "2026-07-28": {"done": ["h3"], "posted": true}, "2026-07-29": {"done": ["h3"], "posted": true}, "2026-07-30": {"done": ["h1"], "posted": true}, "2026-07-31": {"done": ["h1", "h2", "h3"]}, "2026-08-01": {"done": ["h2", "h3"]}, "2026-08-02": {"done": ["h1", "h2", "h3"]}, "2026-08-03": {"done": ["h1", "h2", "h4"]}, "2026-08-04": {"done": ["h1", "h2"], "posted": true}, "2026-08-05": {"done": ["h1", "h4"], "posted": true}, "2026-08-06": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-08-07": {"done": ["h1", "h2", "h4"]}, "2026-08-08": {"done": ["h2", "h3"], "posted": true}, "2026-08-09": {"done": ["h1", "h4"]}, "2026-08-10": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-08-11": {"done": ["h1"], "posted": true}, "2026-08-12": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-08-13": {"done": ["h1", "h2", "h3", "h4"]}, "2026-08-14": {"done": ["h1", "h4"]}, "2026-08-16": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-08-17": {"done": ["h1", "h3"], "posted": true}, "2026-08-18": {"done": ["h1", "h4"], "posted": true}, "2026-08-19": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-08-20": {"done": ["h1", "h2", "h4"]}, "2026-08-21": {"done": ["h1", "h3", "h4"], "posted": true}, "2026-08-22": {"done": ["h2", "h3"], "posted": true}, "2026-08-23": {"done": ["h1"], "posted": true}, "2026-08-24": {"done": ["h2", "h4"], "posted": true}, "2026-08-25": {"done": ["h1", "h2", "h3"], "posted": true}, "2026-08-26": {"done": ["h1", "h4"], "posted": true}, "2026-08-27": {"done": ["h1"], "posted": true}, "2026-08-28": {"done": ["h1", "h4"]}, "2026-08-29": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-08-30": {"done": ["h2", "h3", "h4"], "posted": true}, "2026-08-31": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-09-01": {"done": ["h1", "h2"], "posted": true}, "2026-09-02": {"done": ["h1", "h2", "h3"], "posted": true}, "2026-09-03": {"done": ["h1", "h4"], "posted": true}, "2026-09-04": {"done": ["h1", "h4"]}, "2026-09-05": {"done": ["h1", "h2", "h3", "h4"]}, "2026-09-06": {"done": ["h4"], "posted": true}, "2026-09-07": {"done": ["h1", "h4"], "posted": true}, "2026-09-08": {"done": ["h1"]}, "2026-09-09": {"done": ["h2", "h4"]}, "2026-09-10": {"done": ["h4"]}, "2026-09-11": {"done": ["h1", "h4"]}, "2026-09-12": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-09-13": {"done": ["h1", "h2"], "posted": true}, "2026-09-14": {"done": ["h1", "h2", "h4"]}, "2026-09-15": {"done": ["h1", "h3"], "posted": true}, "2026-09-16": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-09-17": {"done": ["h1", "h2", "h4"], "posted": true}, "2026-09-18": {"done": ["h1"], "posted": true}, "2026-09-19": {"done": ["h2", "h3"], "posted": true}, "2026-09-20": {"done": ["h1", "h4"], "posted": true}, "2026-09-21": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-09-23": {"done": ["h1", "h2", "h3", "h4"], "posted": true}, "2026-09-24": {"done": ["h1", "h4"], "posted": true}, "2026-09-25": {"done": ["h1", "h4"], "posted": true}, "2026-09-26": {"done": ["h1", "h3"]}, "2026-09-27": {"done": ["h2", "h3", "h4"], "posted": true}, "2026-09-28": {"done": ["h1", "h3", "h4"], "posted": true}, "2026-09-29": {"done": ["h1", "h4"], "posted": true}, "2026-09-30": {"done": ["h1", "h4"], "posted": true}, "2026-10-01": {"done": ["h1", "h3", "h4"], "posted": true}, "2026-10-02": {"done": ["h1", "h2", "h4"]}, "2026-10-03": {"done": ["h1", "h4"], "posted": true}, "2026-10-04": {"done": ["h1"], "posted": true}, "2026-10-05": {"done": ["h1", "h2", "h3", "h4"]}, "2026-10-06": {"done": ["h1", "h2", "h3", "h4"], "posted": true}}, "journals": {"2026-07-08": {"q1": "採用面談で相手の原体験を聞いたら、志望動機の解像度が一気に上がった。順番を変えただけ。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": false, "q2": "任せると決めた案件に、つい口を出してしまった。相手の時間を奪っている。"}, "2026-07-10": {"q1": "朝に走ると、午前の判断が明らかに速い。走れなかった日との差が自分でも分かる。", "mind": "cloud", "body": "sun", "stars": 3, "savedAt": 1, "posted": true, "q2": "英語の商談で言葉が出てこず、要点だけになった。準備の不足。"}, "2026-07-14": {"q1": "数字を見る時間を月曜の朝に固定した。週の途中で焦らなくなった。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": true, "q2": "夜に予定を詰めすぎている。読書が後回しになる構造だった。"}, "2026-07-15": {"q1": "子どもと夕食をとれた日が続いている。仕事の質も落ちていない。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-07-17": {"q1": "決めきれない案件を一晩持ち越した。朝に見たら答えは明らかだった。", "mind": "cloud", "body": "rain", "stars": 3, "savedAt": 1, "posted": true, "q2": "疲れている日に重い判断をしない、を守れていない。"}, "2026-07-19": {"q1": "任せた仕事が、自分がやるより良い形で返ってきた。見ないでいられた三日間。", "mind": "sun", "body": "cloud", "stars": 5, "savedAt": 1, "posted": true}, "2026-07-24": {"q1": "走れない日が続くと、思考が狭くなる感覚がある。順序が逆かもしれない。", "mind": "rain", "body": "rain", "stars": 2, "savedAt": 1, "posted": true, "q2": "睡眠を削って作った時間は、結局あとで返している。"}, "2026-07-25": {"q1": "英語で雑談ができた。商談より雑談のほうが難しい。", "mind": "cloud", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-07-26": {"q1": "読書の時間を朝に移した。夜に残すと必ず消える。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-07-30": {"q1": "四半期の数字が見えてきた。想定より良いが、要因を説明できない。", "mind": "cloud", "body": "cloud", "stars": 3, "savedAt": 1, "posted": false, "q2": "再現性のない成果は、来期の負債になる。"}, "2026-08-01": {"q1": "家族との時間を予定表に入れた。入れないと消えるものがある。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": true}, "2026-08-08": {"q1": "面談の前に相手の発信を読む習慣をつけた。初速が違う。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": true}, "2026-08-10": {"q1": "走りながら考えた構想を、そのまま提案に落とせた。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": true}, "2026-08-12": {"q1": "体が重い。無理に予定を入れず、夕方に切り上げた。", "mind": "cloud", "body": "rain", "stars": 3, "savedAt": 1, "posted": true, "q2": "休むことを判断するのに、まだ罪悪感がある。"}, "2026-08-13": {"q1": "英語学習の記録が30日続いた。続いているという事実が、次の30日を軽くする。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-08-14": {"q1": "会議を30分から20分にした。結論の質は変わらなかった。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": false}, "2026-08-17": {"q1": "断れなかった依頼が、結局いちばん時間を取った。", "mind": "rain", "body": "cloud", "stars": 2, "savedAt": 1, "posted": false, "q2": "断る理由を一行で言えるようにしたい。"}, "2026-08-19": {"q1": "採用した人が最初の成果を出した。自分は何もしていない。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-08-20": {"q1": "移動中に考えがまとまる。机の前より進むことがある。", "mind": "cloud", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-08-26": {"q1": "週末に仕事を持ち込んだ。月曜が軽くなった分、家族の時間が減った。", "mind": "cloud", "body": "cloud", "stars": 3, "savedAt": 1, "posted": false}, "2026-08-27": {"q1": "久しぶりに長い距離を走った。考えごとが整理される感覚。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-08-28": {"q1": "数字の悪い月の説明を、言い訳なしで書けた。", "mind": "cloud", "body": "cloud", "stars": 3, "savedAt": 1, "posted": false}, "2026-08-29": {"q1": "任せる範囲を一段広げた。こわいが、戻すほうがこわい。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": false}, "2026-08-30": {"q1": "英語の資料を読むのが速くなっている。辞書を引く回数が減った。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-09-02": {"q1": "子どもが寝たあとに読書。静かな時間が確保できた。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": true}, "2026-09-03": {"q1": "予定を詰めすぎた週。判断が雑になった自覚がある。", "mind": "rain", "body": "rain", "stars": 2, "savedAt": 1, "posted": false, "q2": "余白は、つくらないと生まれない。"}, "2026-09-05": {"q1": "朝の順番を変えた。走る→読む→仕事。迷いが減った。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": true}, "2026-09-06": {"q1": "相手の話を最後まで聞けた面談。結論を急がなかった。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": false}, "2026-09-07": {"q1": "走れなかったが、歩いた。ゼロにしない選択。", "mind": "cloud", "body": "cloud", "stars": 3, "savedAt": 1, "posted": true}, "2026-09-09": {"q1": "商談を英語で完結できた。細かい言い回しは拙いが、伝わった。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-09-11": {"q1": "本を2冊並行で読んでいる。片方が進まない。", "mind": "cloud", "body": "sun", "stars": 3, "savedAt": 1, "posted": true, "q2": "欲張ると、どちらも残る。"}, "2026-09-13": {"q1": "月末の予定に、先に余白を入れた。初めての試み。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-09-14": {"q1": "疲れている自覚がないまま判断していた。あとから見ると粗い。", "mind": "rain", "body": "rain", "stars": 2, "savedAt": 1, "posted": true}, "2026-09-15": {"q1": "夕食の時間を固定したら、仕事の終わり方が変わった。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": true}, "2026-09-17": {"q1": "走った日は、夜の集中が落ちる。配分を考えたい。", "mind": "cloud", "body": "cloud", "stars": 3, "savedAt": 1, "posted": false}, "2026-09-19": {"q1": "任せた案件を三日見なかった。想像以上にきつかった。", "mind": "cloud", "body": "sun", "stars": 4, "savedAt": 1, "posted": true}, "2026-09-20": {"q1": "読書が習慣になってきた。朝に置いたのが効いている。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": true}, "2026-09-21": {"q1": "来期の構想に半日使えた。久しぶりにまとまった時間。", "mind": "sun", "body": "cloud", "stars": 5, "savedAt": 1, "posted": true}, "2026-09-26": {"q1": "英語のミーティングで、聞き返す回数が減った。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": false}, "2026-09-29": {"q1": "今月はよく走れた。数字より、続いた感覚のほうが残っている。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-10-01": {"q1": "採用面談で相手の原体験を聞いたら、志望動機の解像度が一気に上がった。順番を変えただけ。", "mind": "sun", "body": "sun", "stars": 4, "savedAt": 1, "posted": true, "q2": "任せると決めた案件に、つい口を出してしまった。相手の時間を奪っている。"}, "2026-10-02": {"q1": "朝に走ると、午前の判断が明らかに速い。走れなかった日との差が自分でも分かる。", "mind": "cloud", "body": "sun", "stars": 3, "savedAt": 1, "posted": true, "q2": "英語の商談で言葉が出てこず、要点だけになった。準備の不足。"}, "2026-10-03": {"q1": "数字を見る時間を月曜の朝に固定した。週の途中で焦らなくなった。", "mind": "sun", "body": "cloud", "stars": 4, "savedAt": 1, "posted": true, "q2": "夜に予定を詰めすぎている。読書が後回しになる構造だった。"}, "2026-10-04": {"q1": "子どもと夕食をとれた日が続いている。仕事の質も落ちていない。", "mind": "sun", "body": "sun", "stars": 5, "savedAt": 1, "posted": false}, "2026-10-05": {"q1": "決めきれない案件を一晩持ち越した。朝に見たら答えは明らかだった。", "mind": "cloud", "body": "rain", "stars": 3, "savedAt": 1, "posted": true, "q2": "疲れている日に重い判断をしない、を守れていない。"}, "2026-10-06": {"q1": "任せた仕事が、自分がやるより良い形で返ってきた。見ないでいられた三日間。", "mind": "sun", "body": "cloud", "stars": 5, "savedAt": 1, "posted": true}}, "tavs": [{"id": "t00", "title": "面談ではまず相手の原体験を聞く", "memo": "順番を変えるだけで志望動機の解像度が変わる", "decision": "yes", "due": "2026-08-20", "review": "3人に試したら、深さが明らかに違った。定例の面談フローに入れる。", "createdAt": "2026-08-01", "completedAt": "2026-08-20", "shared": true, "effect": "good"}, {"id": "t01", "title": "週次の数字は月曜の朝に見る", "memo": "週の途中で焦らずに済む", "decision": "yes", "due": "2026-09-02", "review": "焦りが減った。月曜が祝日の週は崩れるので火曜に寄せる運用へ変更。", "createdAt": "2026-08-01", "completedAt": "2026-09-02", "shared": true, "effect": "good"}, {"id": "t02", "title": "任せたら三日は見ない", "memo": "手を出すと相手の時間を奪う", "decision": "yes", "due": "2026-09-18", "review": "見ないでいるのがきつかった。が、戻ってきた成果は自分より良かった。", "createdAt": "2026-08-01", "completedAt": "2026-09-18", "shared": true, "effect": "good"}, {"id": "t03", "title": "重い判断は朝にまわす", "memo": "疲れている時間に決めない", "decision": "yes", "due": "2026-09-29", "review": "一晩持ち越すと答えが明らかになることが多い。夜の決裁をやめた。", "createdAt": "2026-08-01", "completedAt": "2026-09-29", "shared": true, "effect": "good"}, {"id": "t04", "title": "会議の冒頭3分で目的を言語化する", "memo": "", "decision": "yes", "due": "2026-10-02", "review": "短くなった会議もあったが、もともと短い会議では冗長に。長い会議だけに使う。", "createdAt": "2026-08-01", "completedAt": "2026-10-02", "shared": true, "effect": "meh"}, {"id": "t05", "title": "読書は朝に移す", "memo": "夜に残すと必ず消える", "decision": "yes", "due": "2026-10-04", "review": "4日続けて実行できた。夜より頭に入る。", "createdAt": "2026-08-01", "completedAt": "2026-10-04", "shared": true, "effect": "good"}, {"id": "t06", "title": "相手の発信を読んでから会う", "memo": "", "decision": "plan", "due": "2026-10-20", "review": "", "createdAt": "2026-08-01"}, {"id": "t07", "title": "月末に翌月の余白を先に確保する", "memo": "", "decision": "plan", "due": "2026-10-31", "review": "", "createdAt": "2026-08-01"}, {"id": "t08", "title": "英語の雑談を週1回いれる", "memo": "商談より雑談のほうが難しい", "decision": "plan", "due": "2026-10-15", "review": "", "createdAt": "2026-08-01"}, {"id": "t09", "title": "走った日の夜は重い作業を入れない", "memo": "", "decision": "plan", "due": "2026-10-02", "review": "", "createdAt": "2026-08-01"}, {"id": "t10", "title": "断る理由を一行で言えるようにする", "memo": "", "decision": null, "due": "", "review": "", "createdAt": "2026-08-01"}, {"id": "t11", "title": "移動中に音声で振り返りを残す", "memo": "", "decision": null, "due": "", "review": "", "createdAt": "2026-08-01"}, {"id": "t12", "title": "毎朝ビジョンを声に出す", "memo": "続ける自信がない", "decision": "no", "due": "", "review": "", "createdAt": "2026-08-01"}]};
+
+function loadDemoSeed(force) {
+  if (!force && localStorage.getItem("demo_profile")) return;
+  localStorage.setItem("demo_profile", JSON.stringify(DEMO_SEED.profile));
+  localStorage.setItem("demo_logs", JSON.stringify(DEMO_SEED.logs));
+  localStorage.setItem("demo_journals", JSON.stringify(DEMO_SEED.journals));
+  localStorage.setItem("demo_tavs", JSON.stringify(DEMO_SEED.tavs));
+  localStorage.setItem("demo_local_only", "1");
+}
+loadDemoSeed(false);
+
+let profile = load("demo_profile");
+let logs = load("demo_logs") || {};
+let journals = load("demo_journals") || {};
+let tavs = load("demo_tavs") || [];
+let tab = "habit";
+let menuOpen = false;
+let overlay = null;   // "review" | "settings" | null
+let tavFilter = "active";
+let tavOpen = {};          // 展開中のTAV
+let tavQuery = "";         // 検索語
+let tavBulk = false;       // まとめて追加モード
+let dayOffset = 0;          // 0=今日, 1=昨日, ... 最大30
+const MAX_BACK = 30;        // さかのぼれる日数
+let toastTimer = null;
+let ringAnimated = false;
+
+const MILESTONES = [7, 30, 66, 100, 200, 365];
+
+const WEATHER = [
+  { id: "sun",   label: "晴れ", emoji: ":sunny:" },
+  { id: "cloud", label: "曇り", emoji: ":cloud:" },
+  { id: "rain",  label: "雨",   emoji: ":umbrella_with_rain_drops:" },
+];
+const WEATHER_COLOR = { sun: "#28407A", cloud: "rgba(40,64,122,.42)", rain: "rgba(40,64,122,.16)" };
+
+const JOURNAL_QUESTIONS = [
+  { id: "q1", label: "今日、どんな出来事があって、どんな感情になった？" },
+  { id: "q2", label: "なぜ、そんな感情になった？" },
+  { id: "q3", label: "明日、ひとつだけ変えるとしたら？" },
+];
+
+function webhookUrls() {
+  const g = (profile && profile.group) || "";
+  if (!g) return [];
+  // "AB" のように複数指定された場合は、該当するチャンネルすべてに送る
+  return g.split("").map((id) => SLACK_WEBHOOKS[id]).filter(Boolean);
+}
+const webhookUrl = () => webhookUrls()[0] || "";
+
+/* ---------- stats ---------- */
+function computeStats() {
+  const start = dateFromKey(profile.startDate);
+  const now = dateFromKey(todayKey());
+  const elapsed = Math.max(1, daysBetween(start, now) + 1);
+  const useHabits = hasHabits();
+  const nHabits = (profile.habits || []).length || 1;
+  let totalDone = 0, stampedDays = 0;
+  // 習慣がない人は「ジャーナルを書いた日」を記録日とする
+  const marked = (k) => useHabits
+    ? !!(logs[k] && (logs[k].done || []).length > 0)
+    : !!(journals[k] && journals[k].savedAt);
+  if (useHabits) {
+    Object.values(logs).forEach((v) => {
+      const done = (v.done || []).length;
+      totalDone += done;
+      if (done > 0) stampedDays++;
+    });
+  } else {
+    Object.keys(journals).forEach((k) => { if (journals[k] && journals[k].savedAt) stampedDays++; });
+  }
+  let streak = 0;
+  const cur = new Date(now);
+  for (;;) {
+    const key = keyFromDate(cur);
+    if (marked(key)) { streak++; cur.setDate(cur.getDate() - 1); }
+    else {
+      if (key === todayKey()) { cur.setDate(cur.getDate() - 1); continue; }
+      break;
+    }
+  }
+  const rate = useHabits
+    ? Math.round(totalDone / (nHabits * elapsed) * 100)
+    : Math.round(stampedDays / elapsed * 100);
+  return { elapsed, rate: Math.min(100, rate), streak, stampedDays, useHabits };
+}
+
+function habitBestStreak(habitId) {
+  if (!profile || !profile.startDate) return 0;
+  const start = dateFromKey(profile.startDate), end = dateFromKey(todayKey());
+  let best = 0, run = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const k = keyFromDate(cur);
+    if (logs[k] && (logs[k].done || []).includes(habitId)) { run++; if (run > best) best = run; }
+    else run = 0;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return best;
+}
+
+function computeHabitStats(habitId) {
+  const start = dateFromKey(profile.startDate);
+  const now = dateFromKey(todayKey());
+  const elapsed = Math.max(1, daysBetween(start, now) + 1);
+  let doneDays = 0;
+  Object.values(logs).forEach((v) => { if ((v.done || []).includes(habitId)) doneDays++; });
+  let streak = 0;
+  const cur = new Date(now);
+  for (;;) {
+    const key = keyFromDate(cur);
+    if (logs[key] && (logs[key].done || []).includes(habitId)) {
+      streak++; cur.setDate(cur.getDate() - 1);
+    } else {
+      if (key === todayKey()) { cur.setDate(cur.getDate() - 1); continue; }
+      break;
+    }
+  }
+  return { streak, rate: Math.min(100, Math.round(doneDays / elapsed * 100)) };
+}
+
+/* ---------- Slack ---------- */
+function sendSlack(text) {
+  // デモ：実際には送信せず、成功したことにする
+  console.log("[DEMO] Slackへ送信（実際には送られません）\n" + text);
+  return new Promise((r) => setTimeout(() => r(true), 420));
+}
+
+function showToast(msg) {
+  const old = $(".toast");
+  if (old) old.remove();
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 3500);
+}
+
+
+/* ---------- month ring (①) ---------- */
+/* ---------- milestone celebration (⑤) ---------- */
+function showCelebration(m) {
+  const el = document.createElement("div");
+  el.className = "celebrate";
+  el.innerHTML = '<div class="celebrate-card">' +
+    '<div class="celebrate-kicker">MILESTONE</div>' +
+    '<div class="celebrate-num">' + m + '<small>日</small></div>' +
+    '<div class="celebrate-label">投稿 ' + m + '日連続を達成</div>' +
+    '<p class="celebrate-msg">静かに、確かに、積み重なっています。<br>この調子で。</p>' +
+    '<p class="celebrate-close">タップして閉じる</p></div>';
+  el.onclick = () => el.remove();
+  document.body.appendChild(el);
+}
+
+/* ---------- monthly record card (⑥) ---------- */
+async function generateCard() {
+  try { await document.fonts.ready; } catch (e) {}
+  const now = appNow();
+  const y = now.getFullYear(), mo = now.getMonth();
+  const dim = new Date(y, mo + 1, 0).getDate();
+  const nHabits = profile.habits.length || 1;
+
+  let recDays = 0, fullDays = 0, best = 0, run = 0;
+  const days = [];
+  for (let i = 1; i <= dim; i++) {
+    const k = y + "-" + String(mo + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    const v = logs[k];
+    const ratio = v ? (v.done || []).length / nHabits : 0;
+    const future = dateFromKey(k) > now;
+    days.push({ ratio, future });
+    if (!future) {
+      if (ratio > 0) { recDays++; run++; best = Math.max(best, run); if (ratio >= 1) fullDays++; }
+      else run = 0;
+    }
+  }
+
+  const W = 1080, H = 1080;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const x = cv.getContext("2d");
+  const mincho = "'Shippori Mincho B1', serif";
+  const gothic = "'Zen Kaku Gothic New', sans-serif";
+
+  x.fillStyle = "#F7F4EE"; x.fillRect(0, 0, W, H);
+
+  // logo ring + wordmark
+  x.strokeStyle = "#28407A"; x.lineWidth = 7; x.lineCap = "round";
+  x.beginPath(); x.arc(124, 118, 34, -Math.PI / 2 + 0.55, -Math.PI / 2 + 2 * Math.PI - 0.25); x.stroke();
+  x.fillStyle = "#28407A"; x.beginPath(); x.arc(124, 84, 8, 0, 2 * Math.PI); x.fill();
+  x.fillStyle = "#191C22"; x.textBaseline = "middle";
+  x.font = "700 44px " + mincho;
+  x.fillText("Daily Circle", 184, 120);
+
+  x.strokeStyle = "rgba(25,28,34,.16)"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(90, 186); x.lineTo(W - 90, 186); x.stroke();
+
+  // title & name
+  x.fillStyle = "#191C22"; x.font = "800 88px " + mincho;
+  x.fillText(y + "年" + (mo + 1) + "月の記録", 90, 286);
+  x.fillStyle = "#4A4E58"; x.font = "500 40px " + gothic;
+  x.fillText(profile.name, 90, 372);
+  x.fillStyle = "#28407A"; x.fillRect(90, 418, 88, 6);
+
+  // dot grid (7 columns)
+  const gx = 118, gy = 500, gapX = 140, gapY = 92, r = 28;
+  days.forEach((d, i) => {
+    const cx = gx + (i % 7) * gapX, cy = gy + Math.floor(i / 7) * gapY;
+    x.setLineDash([]);
+    if (d.future) {
+      x.strokeStyle = "rgba(25,28,34,.2)"; x.lineWidth = 3; x.setLineDash([6, 8]);
+      x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.stroke(); x.setLineDash([]);
+    } else if (d.ratio >= 1) {
+      x.fillStyle = "#28407A"; x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.fill();
+    } else if (d.ratio > 0) {
+      x.strokeStyle = "rgba(40,64,122," + (0.4 + d.ratio * 0.5).toFixed(2) + ")"; x.lineWidth = 6;
+      x.beginPath(); x.arc(cx, cy, r - 3, 0, 2 * Math.PI); x.stroke();
+    } else {
+      x.fillStyle = "#EDEAE1"; x.beginPath(); x.arc(cx, cy, r, 0, 2 * Math.PI); x.fill();
+    }
+  });
+
+  // stats
+  x.fillStyle = "#191C22"; x.font = "700 38px " + mincho;
+  x.fillText("記録 " + recDays + "日　　すべて達成 " + fullDays + "日　　最長 " + best + "日連続", 90, 962);
+
+  // footer
+  x.fillStyle = "#B08A3E"; x.font = "600 24px " + mincho;
+  try { x.letterSpacing = "8px"; } catch (e) {}
+  x.fillText("DAILY CIRCLE — " + y, 90, 1022);
+  try { x.letterSpacing = "0px"; } catch (e) {}
+
+  const a = document.createElement("a");
+  a.download = "daily-circle-" + y + "-" + String(mo + 1).padStart(2, "0") + ".png";
+  a.href = cv.toDataURL("image/png");
+  a.click();
+  showToast("記録カードを保存しました");
+}
+
+
+/* ---------- weekly report ---------- */
+const WD = ["日","月","火","水","木","金","土"];
+function fmtDate(d) { return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; }
+
+function mondayOf(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // 月曜起点
+  return x;
+}
+
+function weeklyReportMsg() {
+  if (!hasHabits()) return null;
+  const M = mondayOf(appNow());
+  const wk = keyFromDate(M);
+  if ((profile.lastWeeklyReport || "") === wk) return null;
+  const prevM = new Date(M); prevM.setDate(prevM.getDate() - 7);
+  if (dateFromKey(profile.startDate) > new Date(M.getTime() - 1)) return null; // 先週より後に開始した人はスキップ
+  const dayKeys = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(prevM); d.setDate(d.getDate() + i);
+    dayKeys.push(keyFromDate(d));
+  }
+  let recDays = 0;
+  dayKeys.forEach((k) => { if (logs[k] && (logs[k].done || []).length > 0) recDays++; });
+  const lines = profile.habits.map((h) => {
+    let row = "", n = 0;
+    dayKeys.forEach((k) => {
+      const on = logs[k] && (logs[k].done || []).includes(h.id);
+      row += on ? "◉" : "○";
+      if (on) n++;
+    });
+    return row + "　" + h.name + "　" + Math.round(n / 7 * 100) + "%";
+  }).join("\n");
+  const s = computeStats();
+  return {
+    wk,
+    text: "*" + fmtDate(dateFromKey(dayKeys[0])) + "〜" + fmtDate(dateFromKey(dayKeys[6])) +
+      "　" + profile.name + " の一週間*\n" + lines +
+      "\n\n記録した日 " + recDays + "/7　　:fire: " + s.streak + "日連続"
+  };
+}
+
+/* ---------- actions ---------- */
+function toggleHabit(habitId) {
+  const key = targetKey();
+  const day = logs[key] || { done: [] };
+  const wasDone = day.done.includes(habitId);
+  day.done = wasDone ? day.done.filter((x) => x !== habitId) : [...day.done, habitId];
+  logs[key] = day;
+  persist();
+  render();
+}
+
+function postToday() {
+  const key = targetKey();
+  const day = logs[key] || { done: [] };
+  if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
+  const s = computeStats();
+  const lines = profile.habits.map((h) => {
+    const done = day.done.includes(h.id);
+    const hs = done ? computeHabitStats(h.id) : null;
+    return (done ? "◉ " : "○ ") + h.name + (done && hs.streak ? "　" + hs.streak + "日" : "");
+  }).join("\n");
+  const isUpdate = !!day.posted;
+  const celebrated = profile.celebrated || [];
+  const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
+  const dd = dateFromKey(key);
+  const msg = "*" + fmtDate(dd) + "　" + profile.name + "*" +
+    (isPast() ? "（後から記録）" : "") + (isUpdate ? "（更新）" : "") + "\n" +
+    lines +
+    "\n\n:fire: " + s.streak + "日連続　　達成率 " + s.rate + "%" +
+    (milestone ? "\n\n:tada: 祝・" + milestone + "日連続達成" : "");
+  sendSlack(msg).then((ok) => {
+    if (ok) {
+      day.posted = true;
+      logs[key] = day;
+      if (milestone) profile.celebrated = [...celebrated, milestone];
+      persist();
+      render();
+      if (milestone) showCelebration(milestone);
+      showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
+      const wr = isPast() ? null : weeklyReportMsg();   // 週次は今日の投稿時のみ
+      if (wr) {
+        sendSlack(wr.text).then((ok2) => {
+          if (ok2) {
+            profile.lastWeeklyReport = wr.wk;
+            persist();
+            showToast("先週のふりかえりも投稿しました");
+          }
+        });
+      }
+    } else {
+      showToast("投稿に失敗しました。通信環境を確認してください");
+    }
+  });
+}
+
+
+/* =========================================================
+   AI（Supabase Edge Function 経由）
+========================================================= */
+const DEMO_FEEDBACK = [
+  { prelude: "書かれた言葉に、少し急ぎの気配がありました。",
+    question: "その速さは、締切から来ていますか。それとも不安からでしょうか。" },
+  { prelude: "任せたい気持ちと、手を出したくなる気持ちが同じ日に並んでいます。",
+    question: "口を出したくなった瞬間、何が心配でしたか。" },
+  { prelude: "体の調子に触れた記述が、先週より増えているように見えます。",
+    question: "いま削るとしたら、どの予定がいちばん惜しくないですか。" },
+];
+let demoFbIndex = 0;
+
+const DEMO_MONTHLY = {
+  headline: "整えることに時間を使えた月。",
+  body: "朝の時間に置いた習慣は安定して記録されている一方、夜に寄せたものは週の後半になるほど間隔が空いています。時間帯そのものより、その日の終わり方に左右されているのかもしれません。\n\n" +
+        "ジャーナルでは「任せる」という語が繰り返し現れます。判断の速さを保ちながら、手放す範囲を決めようとしている時期に見えます。",
+  question: "来月、任せたあとに見ない時間をつくるとしたら、どこからにしますか。",
+  themes: [
+    { t: "任せることへの迷い", n: 9 },
+    { t: "朝の時間の使い方", n: 7 },
+    { t: "英語での商談", n: 5 },
+    { t: "睡眠と回復", n: 4 },
+    { t: "家族との時間", n: 2 },
+  ],
+  balance: [
+    { axis: "体・健康", v: 3.8 }, { axis: "仕事", v: 4.4 }, { axis: "お金", v: 2.1 },
+    { axis: "家族", v: 2.9 }, { axis: "学び", v: 4.2 }, { axis: "心", v: 3.3 },
+  ],
+};
+
+async function callAI(kind, text) {
+  // デモ：APIを呼ばず、用意した応答を少し待ってから返す
+  await new Promise((r) => setTimeout(r, 1100));
+  if (kind === "feedback") {
+    const v = DEMO_FEEDBACK[demoFbIndex % DEMO_FEEDBACK.length];
+    demoFbIndex++;
+    return v;
+  }
+  return JSON.parse(JSON.stringify(DEMO_MONTHLY));
+}
+
+/* ---------- ジャーナルへのフィードバック ---------- */
+let fbLoading = false;
+
+async function runFeedback(key) {
+  const entry = journals[key];
+  if (!entry) return;   // デモはログイン不要
+  const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? q.label + "\n" + entry[q.id] : "")
+    .filter(Boolean).join("\n\n");
+  if (!body.trim()) return;
+  const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.label : ""; };
+  const ctx = (entry.mind || entry.body)
+    ? "（心の調子：" + (wOf(entry.mind) || "—") + "／体の調子：" + (wOf(entry.body) || "—") + "）\n\n" : "";
+
+  fbLoading = true; render();
+  try {
+    const r = await callAI("feedback", ctx + body);
+    entry.feedback = { prelude: r.prelude || "", question: r.question || "", at: Date.now() };
+    journals[key] = entry;
+    persist();
+  } catch (e) {
+    console.error("feedback", e);
+    entry.feedback = { error: String(e.message || e), at: Date.now() };
+    journals[key] = entry;
+  }
+  fbLoading = false;
+  render();
+}
+
+function feedbackHTML(fb) {
+  if (!fb) return "";
+  if (fb.error) {
+    return '<div class="fb fb-err"><div class="fb-head"><span class="fb-mark">◇</span>' +
+      '<span class="fb-label">問い返し</span></div>' +
+      '<p class="fb-prelude">いまは受け取れませんでした。<br>' + esc(fb.error) + '</p>' +
+      '<button class="btn-ghost sm" id="fb-retry">もう一度ためす</button></div>';
+  }
+  return '<div class="fb">' +
+    '<div class="fb-head"><span class="fb-mark">◇</span><span class="fb-label">今日の問い返し</span>' +
+    '<span class="fb-private">自分だけに表示</span></div>' +
+    (fb.prelude ? '<p class="fb-prelude">' + esc(fb.prelude) + '</p>' : '') +
+    '<p class="fb-q">' + esc(fb.question) + '</p></div>';
+}
+
+/* ---------- journal actions ---------- */
+function saveJournal() {
+  const key = targetKey();
+  const entry = journals[key] || {};
+  let any = false;
+  document.querySelectorAll(".jr-field").forEach((el) => {
+    entry[el.dataset.q] = el.value.trim();
+    if (el.value.trim()) any = true;
+  });
+  if (!any) { showToast("ひとつでも書いてから保存してください"); return; }
+  document.querySelectorAll("[data-weather]").forEach((el) => {
+    entry[el.dataset.weather] = el.dataset.val || "";
+    if (el.dataset.val) any = true;
+  });
+  const starBox = $("#jr-stars");
+  entry.stars = starBox ? Number(starBox.dataset.val || 0) : (entry.stars || 0);
+  entry.savedAt = Date.now();
+  const share = $("#jr-share") && $("#jr-share").checked;
+  journals[key] = entry;
+  persist();
+
+  if (share && webhookUrl()) {
+    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "_" + q.label + "_\n" + entry[q.id] : "")
+      .filter(Boolean).join("\n\n");
+    const d = dateFromKey(key);
+    const st = entry.stars ? "　" + "★".repeat(entry.stars) + "☆".repeat(5 - entry.stars) : "";
+    const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.label : "—"; };
+    const wl = (entry.mind || entry.body)
+      ? "心 " + wOf(entry.mind) + "　体 " + wOf(entry.body) + "\n\n" : "";
+    sendSlack("*" + fmtDate(d) + "　" + profile.name + " のジャーナル*" +
+      (isPast() ? "（後から記録）" : "") + st + "\n" +
+      wl + body).then((ok) => {
+      if (ok) { entry.posted = true; journals[key] = entry; persist(); }
+      render();
+      showToast(ok ? "保存してSlackに共有しました" : "保存しました（Slack共有に失敗）");
+      runFeedback(key);
+    });
+  } else {
+    entry.posted = false;
+    journals[key] = entry;
+    persist();
+    render();
+    showToast("保存しました");
+    runFeedback(key);
+  }
+}
+
+/* ---------- TAV actions ---------- */
+function addTav() {
+  const title = $("#tav-title").value.trim();
+  if (!title) { showToast("気づきを入力してください"); return; }
+  tavs.unshift({ id: uid(), title, memo: $("#tav-memo").value.trim(), decision: null, due: "", review: "", createdAt: todayKey() });
+  persist();
+  tavFilter = "active";
+  render();
+  showToast("気づきを追加しました");
+}
+
+function addTavBulk() {
+  const ta = $("#tav-bulk");
+  if (!ta) return;
+  const lines = (ta.value || "").split("\n")
+    .map((s) => s.replace(/^[\s・\-–—*•\d.、）)]+/, "").trim())
+    .filter((s) => s.length > 0);
+  if (!lines.length) { showToast("1行に1つずつ入力してください"); return; }
+  const now = todayKey();
+  lines.reverse().forEach((title) => {
+    tavs.unshift({ id: uid(), title, memo: "", decision: null, due: "", review: "", createdAt: now });
+  });
+  persist();
+  tavBulk = false; tavFilter = "active";
+  render();
+  showToast(lines.length + "件の気づきを追加しました");
+}
+
+function findTav(id) { return tavs.find((t) => t.id === id); }
+
+function tavSetDue(id) {
+  const t = findTav(id);
+  if (!t) return;
+  const def = t.due || (() => { const d = appNow(); d.setDate(d.getDate() + 7); return keyFromDate(d); })();
+  openModal({
+    title: "いつまでにやる？",
+    body: '<label class="fld-label">期日</label><input class="fld" type="date" id="md-due" value="' + def + '">',
+    okLabel: "決定する",
+    onOk: () => {
+      const v = $("#md-due").value;
+      if (!v) { showToast("期日を選んでください"); return false; }
+      t.decision = "yes"; t.due = v; t.completedAt = null; t.touchedAt = todayKey();
+      persist(); render(); showToast("期日を設定しました");
+    },
+  });
+}
+
+function tavComplete(id) {
+  const t = findTav(id);
+  if (!t) return;
+  openModal({
+    title: "やってみて、どうだった？",
+    body: '<textarea class="fld" id="md-review" placeholder="実行した結果と、そこから得たこと"></textarea>' +
+      '<label class="fld-label">手ごたえ<span class="opt-tag">任意</span></label>' +
+      '<div class="eff" id="md-eff" data-val="">' +
+        '<button class="eff-opt" data-e="good">役に立った</button>' +
+        '<button class="eff-opt" data-e="meh">いまひとつ</button>' +
+      '</div>' +
+      (webhookUrl()
+        ? '<label class="chk" style="margin-bottom:14px"><input type="checkbox" id="md-share"><span>Slackに共有する</span></label>'
+        : ''),
+    okLabel: "完了にする",
+    onOk: () => {
+      const v = $("#md-review").value.trim();
+      if (!v) { showToast("振り返りを書いてください"); return false; }
+      const share = $("#md-share") && $("#md-share").checked;
+      const eb = $("#md-eff");
+      t.effect = eb ? (eb.dataset.val || "") : "";
+      t.review = v; t.completedAt = todayKey(); t.decision = "yes"; t.touchedAt = todayKey();
+      t.shared = !!share;
+      persist(); render();
+      if (share && webhookUrl()) {
+        sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+          "◉ " + t.title + "\n\n_やってみて_\n" + v).then((ok) =>
+          showToast(ok ? "完了しました。Slackに共有しました" : "完了しました（Slack共有に失敗）"));
+      } else showToast("完了しました");
+    },
+  });
+}
+
+function tavShare(id) {
+  const t = findTav(id);
+  if (!t || !webhookUrl()) return;
+  sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+    "◉ " + t.title + "\n\n_やってみて_\n" + t.review).then((ok) => {
+    if (ok) { t.shared = true; persist(); render(); }
+    showToast(ok ? "Slackに共有しました" : "共有に失敗しました");
+  });
+}
+
+function tavSkip(id) {
+  const t = findTav(id);
+  if (!t) return;
+  t.decision = "no"; t.due = ""; t.completedAt = null; t.touchedAt = todayKey();
+  persist(); render(); showToast("「やらない」として記録しました");
+}
+
+function tavRevive(id) {
+  const t = findTav(id);
+  if (!t) return;
+  t.decision = null;
+  persist(); render();
+}
+
+function tavDelete(id) {
+  openModal({
+    title: "この気づきを削除しますか？",
+    body: '<p class="card-sub">削除すると元に戻せません。「やらない」として残すこともできます。</p>',
+    okLabel: "削除する",
+    danger: true,
+    onOk: () => { tavs = tavs.filter((t) => t.id !== id); persist(); render(); showToast("削除しました"); },
+  });
+}
+
+/* ---------- modal ---------- */
+function openModal({ title, body, okLabel, onOk, danger }) {
+  const el = document.createElement("div");
+  el.className = "modal";
+  el.innerHTML = '<div class="modal-card"><h3 class="modal-title">' + title + '</h3>' + body +
+    '<div class="modal-btns"><button class="btn-ghost" id="md-cancel">やめる</button>' +
+    '<button class="' + (danger ? "btn-danger" : "btn-primary") + '" id="md-ok">' + okLabel + '</button></div></div>';
+  document.body.appendChild(el);
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.querySelector("#md-cancel").onclick = () => el.remove();
+  el.querySelector("#md-ok").onclick = () => { if (onOk() !== false) el.remove(); };
+  const effBox = el.querySelector("#md-eff");
+  if (effBox) {
+    effBox.querySelectorAll(".eff-opt").forEach((b) => (b.onclick = (ev) => {
+      ev.preventDefault();
+      const v = b.dataset.e;
+      effBox.dataset.val = effBox.dataset.val === v ? "" : v;
+      effBox.querySelectorAll(".eff-opt").forEach((x) =>
+        x.classList.toggle("on", x.dataset.e === effBox.dataset.val));
+    }));
+  }
+  const first = el.querySelector("input, textarea");
+  if (first) first.focus();
+}
+
+/* ---------- views ---------- */
+const RING = '<svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M84.6,60.1 L83.3,65.9 L80.9,71.4 L77.4,76.3 L73.0,80.6 L68.0,84.0 L62.5,86.7 L56.6,88.6 L50.6,89.6 L44.3,89.8 L38.2,88.9 L32.3,86.9 L26.9,83.8 L22.2,79.9 L18.4,75.3 L15.3,70.3 L12.8,65.1 L10.9,59.8 L9.5,54.2 L8.7,48.5 L8.8,42.5 L9.9,36.6 L12.2,31.0 L15.8,25.9 L20.3,21.7 L25.6,18.5 L31.3,16.2 L37.2,14.7 L43.2,14.0 L49.3,14.0 L55.3,14.8 L61.2,16.5 L66.7,19.2 L71.6,22.7 L75.8,27.1 L79.1,32.0 L81.6,37.3 L83.5,42.8 L84.6,48.4 L85.1,54.3Z" fill="none" stroke="rgb(40,64,122)" stroke-width="2.4" stroke-linejoin="round"/><path d="M93.6,58.5 L91.7,64.4 L88.5,69.9 L84.3,74.5 L79.2,78.2 L73.6,81.0 L67.8,82.9 L61.8,84.1 L55.8,84.7 L49.7,84.9 L43.4,84.5 L37.1,83.2 L31.0,80.8 L25.4,77.3 L20.7,72.6 L17.3,67.1 L15.2,61.0 L14.3,54.8 L14.5,48.7 L15.4,42.8 L16.8,37.2 L18.6,31.7 L20.9,26.3 L23.9,21.1 L27.8,16.2 L32.7,12.1 L38.4,9.0 L44.8,7.4 L51.4,7.1 L57.9,8.1 L64.0,10.2 L69.6,13.0 L74.8,16.3 L79.6,20.1 L84.0,24.3 L87.9,29.0 L91.2,34.2 L93.6,40.0 L94.8,46.1 L94.7,52.4Z" fill="none" stroke="rgb(27,44,88)" stroke-width="2.4" stroke-linejoin="round"/><path d="M84.2,67.2 L81.8,72.3 L78.4,76.8 L74.3,80.7 L69.4,83.7 L64.2,85.8 L58.6,87.1 L53.0,87.7 L47.3,87.6 L41.6,87.0 L35.9,85.7 L30.3,83.6 L25.0,80.6 L20.4,76.7 L16.7,71.9 L14.2,66.5 L12.9,60.8 L12.6,55.1 L13.3,49.7 L14.6,44.4 L16.3,39.4 L18.4,34.5 L21.1,29.8 L24.5,25.3 L28.7,21.4 L33.7,18.4 L39.4,16.5 L45.4,15.9 L51.4,16.5 L57.2,18.1 L62.6,20.6 L67.6,23.5 L72.2,26.9 L76.4,30.7 L80.2,35.0 L83.4,39.8 L85.7,45.1 L87.0,50.7 L87.0,56.4 L85.9,61.9Z" fill="none" stroke="rgb(58,72,110)" stroke-width="2.4" stroke-linejoin="round"/><path d="M7.5,52.3 L8.4,46.0 L10.2,40.0 L12.8,34.4 L15.9,29.1 L19.6,24.1 L24.0,19.6 L29.1,15.7 L34.9,12.6 L41.1,10.4 L47.7,9.2 L54.4,9.1 L61.1,10.0 L67.5,11.9 L73.6,14.6 L79.2,18.2 L84.2,22.5 L88.3,27.6 L91.4,33.3 L93.2,39.5 L93.7,45.9 L93.0,52.1 L91.2,58.1 L88.6,63.7 L85.3,68.9 L81.5,73.8 L77.1,78.2 L72.2,82.3 L66.6,85.8 L60.4,88.4 L53.8,90.0 L46.8,90.3 L40.0,89.3 L33.5,87.1 L27.6,83.7 L22.5,79.6 L18.1,74.9 L14.5,69.7 L11.7,64.2 L9.7,58.3Z" fill="none" stroke="rgb(217,99,79)" stroke-width="2.4" stroke-linejoin="round"/><path d="M69.5,79.6 L63.9,82.3 L58.0,83.9 L51.9,84.3 L46.0,83.8 L40.3,82.6 L34.8,80.9 L29.5,78.8 L24.3,76.1 L19.2,72.8 L14.7,68.6 L10.9,63.6 L8.3,57.8 L6.9,51.6 L6.9,45.3 L8.2,39.1 L10.4,33.4 L13.4,28.2 L17.0,23.5 L21.0,19.2 L25.5,15.5 L30.4,12.4 L35.8,10.0 L41.6,8.6 L47.6,8.2 L53.6,8.8 L59.4,10.4 L64.9,12.8 L70.1,16.0 L74.8,19.9 L78.9,24.5 L82.3,29.8 L84.7,35.5 L85.9,41.6 L86.0,47.8 L84.8,53.9 L82.6,59.5 L79.6,64.6 L76.1,69.2 L72.1,73.4Z" fill="none" stroke="rgb(58,168,160)" stroke-width="2.4" stroke-linejoin="round"/><path d="M86.1,58.4 L83.9,63.7 L81.0,68.6 L77.4,73.1 L73.2,77.1 L68.3,80.3 L62.9,82.6 L57.1,83.9 L51.2,84.2 L45.3,83.5 L39.6,82.0 L34.3,79.7 L29.3,76.7 L24.6,73.2 L20.5,69.0 L17.1,64.2 L14.5,58.9 L12.9,53.2 L12.5,47.3 L13.3,41.5 L15.0,35.9 L17.6,30.8 L20.8,26.1 L24.4,21.8 L28.6,18.0 L33.3,14.5 L38.4,11.8 L44.1,9.9 L50.1,9.1 L56.2,9.5 L62.0,11.2 L67.4,14.0 L72.0,17.6 L76.1,21.8 L79.5,26.3 L82.5,31.0 L85.1,36.1 L87.2,41.4 L88.6,47.1 L89.0,53.1Z" fill="none" stroke="rgb(139,127,199)" stroke-width="2.4" stroke-linejoin="round"/><path d="M55.8,88.0 L50.3,89.2 L44.6,89.4 L38.9,88.7 L33.4,86.8 L28.3,83.9 L23.9,79.9 L20.3,75.3 L17.6,70.1 L15.6,64.8 L14.2,59.3 L13.3,53.8 L12.8,48.1 L12.9,42.3 L13.9,36.5 L15.9,30.9 L19.0,25.8 L23.1,21.6 L28.0,18.5 L33.5,16.5 L39.0,15.7 L44.5,15.6 L49.9,16.1 L55.2,17.1 L60.5,18.5 L65.7,20.6 L70.6,23.5 L75.1,27.4 L78.7,32.1 L81.3,37.6 L82.7,43.4 L83.0,49.4 L82.5,55.2 L81.3,60.8 L79.6,66.2 L77.2,71.3 L74.3,76.1 L70.7,80.5 L66.3,84.2 L61.3,86.9Z" fill="none" stroke="rgb(232,200,74)" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+
+function onbView() {
+  return '<div class="onb">' +
+    '<div class="onb-mark">' + RING + '</div>' +
+    '<h1 class="onb-title">Daily Circle</h1>' +
+    '<div class="onb-tate">日々の記録帳</div>' +
+    '<p class="onb-lead">年初に宣言した目標を、日々の習慣でやり切るための記録帳です。今日の一歩を記録し、同期と共有しながら、一年を積み重ねていきます。</p>' +
+    '<div class="onb-card">' +
+      '<label class="fld-label">あなたの名前（Slack通知に表示されます）</label>' +
+      '<input class="fld" id="ob-name" placeholder="例：清水 巧">' +
+      '<label class="fld-label">この一年で達成したい目標（1〜3個）</label>' +
+      '<div id="ob-goals"><textarea class="fld" placeholder="目標 1（例：北海道マラソンでMGC出場権を獲得する）"></textarea></div>' +
+      '<button class="btn-ghost" id="ob-add-goal">＋ 目標を追加</button>' +
+      '<label class="fld-label">毎日の習慣<span class="opt-tag">任意</span></label>' +
+      '<p class="note" style="margin-top:0;margin-bottom:10px">毎日続けたいことがあれば、1〜5個まで設定できます。<br>空欄のままにすると、ジャーナルだけの記録帳になります。あとから追加もできます。</p>' +
+      '<div id="ob-habits">' +
+        '<input class="fld" placeholder="習慣 1（例：朝ラン10km）">' +
+        '<input class="fld" placeholder="習慣 2">' +
+        '<input class="fld" placeholder="習慣 3">' +
+      '</div>' +
+      '<button class="btn-ghost" id="ob-add-habit">＋ 習慣を追加</button>' +
+      '<button class="btn-primary" id="ob-start">記録帳をひらく</button>' +
+      '<p class="note">※ 習慣を達成すると、サークルのSlackチャンネルにあなたの名前・達成した習慣・連続日数・達成率が通知されます。</p>' +
+    '</div>' +
+  '</div>';
+}
+
+function headerView(stats) {
+  return '<header class="top">' +
+    '<div class="brand"><span class="brand-mark">' + RING + '</span>' +
+    '<div><div class="brand-name">Daily Circle</div><div class="brand-sub">' + esc(profile.name) + ' さんの一年の記録</div></div></div>' +
+    '<div class="top-right">' +
+      (signedIn() ? '<span class="sync-badge s-' + syncState + '" id="sync-badge" title="' + syncLabel() + '"></span>' : '') +
+      '<div class="streak-pill"><span class="streak-num">' + stats.streak + '</span><span class="streak-label">日連続</span></div>' +
+      '<button class="menu-btn" id="menu-btn" aria-label="メニュー">' +
+        '<svg viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="#191C22" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+      '</button>' +
+      (menuOpen ? '<div class="menu-backdrop" id="menu-backdrop"></div><div class="menu-pop"><button class="menu-item" data-open="settings">設定</button><button class="menu-item" id="demo-reset">サンプルに戻す</button></div>' : '') +
+    '</div>' +
+  '</header>';
+}
+
+function dateByOffset(n) {
+  const d = appNow(); d.setDate(d.getDate() - n);
+  return d;
+}
+function targetKey() { return keyFromDate(dateByOffset(dayOffset)); }
+function isPast() { return dayOffset > 0; }
+// 開始日より前にはさかのぼれない
+function maxBack() {
+  if (!profile || !profile.startDate) return MAX_BACK;
+  const diff = daysBetween(dateFromKey(profile.startDate), dateFromKey(todayKey()));
+  return Math.max(0, Math.min(MAX_BACK, diff));
+}
+
+function habitView() {
+  const tk = targetKey();
+  const day = logs[tk] || { done: [], posted: false };
+  const d = dateFromKey(tk);
+  const wd = ["日","月","火","水","木","金","土"][d.getDay()];
+  const allDone = day.done.length === profile.habits.length;
+
+  // 日付 + 小リング（横並び）
+  let html = '<main class="body">' +
+    '<div class="day-head">' +
+      '<div><div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span>' +
+      '<span class="date-wd">' + wd + '曜日</span>' +
+      (dayOffset === 1 ? '<span class="yst-tag">昨日</span>'
+        : dayOffset > 1 ? '<span class="yst-tag">' + dayOffset + '日前</span>' : '') + '</div>' +
+      '<div class="day-sub">' + (day.posted
+        ? (isPast() ? 'この日の記録は投稿済みです' : '今日の記録は投稿済みです')
+        : (isPast() ? 'あとから記録できます'
+            : (hasHabits() ? '今日の習慣を記録しましょう' : '今日を書き留めましょう'))) + '</div></div>' +
+      miniRingHTML() +
+    '</div>' +
+    '<div class="day-nav">' +
+      '<button class="dnav" id="day-prev"' + (dayOffset >= maxBack() ? ' disabled' : '') + ' aria-label="前の日">‹</button>' +
+      '<input type="date" class="day-picker" id="day-pick" value="' + tk + '" ' +
+        'min="' + keyFromDate(dateByOffset(maxBack())) + '" max="' + todayKey() + '">' +
+      '<button class="dnav" id="day-next"' + (dayOffset <= 0 ? ' disabled' : '') + ' aria-label="次の日">›</button>' +
+      (isPast() ? '<button class="dnav today-btn" id="day-today">今日へ</button>' : '') +
+    '</div>';
+
+  // 習慣カード（設定している人だけ）
+  if (hasHabits()) {
+  html += '<section class="card' + (day.posted ? ' card-done' : '') + '"><h2 class="card-title">' +
+    (isPast() ? fmtDate(dateFromKey(tk)) + 'の習慣' : '今日の習慣') + '</h2>';
+  profile.habits.forEach((h) => {
+    const done = day.done.includes(h.id);
+    const hs = computeHabitStats(h.id);
+    html += '<button class="action-row' + (done ? " done" : "") + '" data-habit="' + h.id + '">' +
+      '<span class="stamp' + (done ? " pressed" : "") + '">' + (done ? "済" : "") + '</span>' +
+      '<span class="action-body"><span class="action-name">' + esc(h.name) + '</span>' +
+      (hs.streak > 0 ? '<span class="action-streak">' + hs.streak + '日連続中</span>' : '') +
+      '</span></button>';
+  });
+  if (allDone) html += '<p class="all-done">本日の習慣、すべて達成。お疲れさまでした。</p>';
+  // 保存状態 ＋ 共有ボタンを同じカード内にまとめる
+  if (webhookUrl()) {
+    const gl = ((GROUPS.find((g) => g.id === profile.group) || {}).label || "");
+    html += '<div class="share-row">' +
+      '<p class="saved-hint"><span class="saved-dot"></span>' +
+        (day.done.length ? '記録は保存されています' : 'タップするだけで記録されます') + '</p>' +
+      '<button class="btn-primary post-btn" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
+        (day.posted
+          ? (isPast() ? 'この日の記録を再投稿する' : '今日の記録を再投稿する')
+          : (isPast() ? 'この日の記録を共有する' : '今日の記録を仲間に共有する')) +
+        '<span class="post-opt">任意</span></button>' +
+      '<p class="share-note">' + (day.posted
+        ? (gl ? gl + 'に投稿済みです。チェックを変えたら、もう一度押すと更新できます。' : '投稿済みです。')
+        : (day.done.length
+            ? (gl ? gl + 'のSlackに投稿します。共有しなくても記録は残ります。' : 'Slackに投稿します。共有しなくても記録は残ります。')
+            : '習慣をチェックすると押せるようになります。')) + '</p>' +
+      '</div>';
+  } else {
+    html += '<p class="saved-hint"><span class="saved-dot"></span>' +
+      (day.done.length ? '記録は保存されています' : 'タップするだけで記録されます') + '</p>';
+  }
+  html += '</section>';
+  } // hasHabits
+
+  if (hasHabits() && !webhookUrl()) {
+    html += '<section class="card"><p class="note" style="margin:0">' + (profile.group
+      ? ((GROUPS.find((g) => g.id === profile.group) || {}).label || "所属グループ") + ' のSlack通知はまだ設定されていません（管理者側で設定されます）。記録は保存されています。'
+      : 'Slack通知は現在オフになっています。記録は保存されています。') + '</p></section>';
+  }
+
+  // ③ 完了感：投稿後に次の導線を出す
+  if (hasHabits() && day.posted && !isPast()) {
+    const jDone = !!(journals[todayKey()] && journals[todayKey()].savedAt);
+    html += '<section class="card done-panel"><div class="done-mark">✓</div>' +
+      '<h2 class="card-title" style="text-align:center">今日の記録は完了しました</h2>' +
+      '<p class="card-sub" style="text-align:center">' +
+      (jDone ? 'ジャーナルも記録済みです。今日もお疲れさまでした。' : 'よければ、下のジャーナルで今日を少し振り返っておきましょう。') + '</p>' +
+      '<button class="btn-ghost" data-goto="tav" style="margin-bottom:0">気づき（TAV）を見る</button>' +
+      '</section>';
+  }
+
+  // ジャーナル（今日のみ）
+  html += journalCardHTML();
+
+  // 目標は折りたたみ（毎日読むものではない）
+  html += '<details class="goals-fold"><summary>この一年の目標</summary>' +
+    '<div class="goals-box">' + profile.goals.map((g) => '<p class="goal-line">' + esc(g) + '</p>').join("") + '</div>' +
+    '</details>';
+
+  return html + '</main>';
+}
+
+
+/* ---------- weather ---------- */
+function weatherSVG(id) {
+  if (id === "sun") return '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="6.4" class="w-fill"/>' +
+    [0,45,90,135,180,225,270,315].map((a) => {
+      const r = a * Math.PI / 180;
+      return '<line x1="' + (16 + Math.cos(r) * 9.6).toFixed(1) + '" y1="' + (16 + Math.sin(r) * 9.6).toFixed(1) +
+        '" x2="' + (16 + Math.cos(r) * 13.2).toFixed(1) + '" y2="' + (16 + Math.sin(r) * 13.2).toFixed(1) + '" class="w-stroke"/>';
+    }).join("") + '</svg>';
+  if (id === "cloud") return '<svg viewBox="0 0 32 32">' +
+    '<path d="M9.5 23h13a5 5 0 0 0 .4-9.98A7.2 7.2 0 0 0 9.3 13.3 4.9 4.9 0 0 0 9.5 23z" class="w-fill"/></svg>';
+  return '<svg viewBox="0 0 32 32">' +
+    '<path d="M9.5 19h13a4.6 4.6 0 0 0 .4-9.2A6.7 6.7 0 0 0 9.3 9.4 4.5 4.5 0 0 0 9.5 19z" class="w-fill"/>' +
+    '<line x1="11.5" y1="22.5" x2="10" y2="26.5" class="w-stroke"/>' +
+    '<line x1="16" y1="22.5" x2="14.5" y2="26.5" class="w-stroke"/>' +
+    '<line x1="20.5" y1="22.5" x2="19" y2="26.5" class="w-stroke"/></svg>';
+}
+
+function weatherRowHTML(kind, label, current) {
+  return '<div class="w-unit"><span class="w-label">' + label + '</span>' +
+    '<div class="w-opts" data-weather="' + kind + '" data-val="' + (current || "") + '">' +
+    WEATHER.map((w) =>
+      '<button class="w-opt' + (current === w.id ? " on" : "") + '" data-w="' + w.id + '" aria-label="' + label + ' ' + w.label + '">' +
+      weatherSVG(w.id) + '<span>' + w.label + '</span></button>'
+    ).join("") + '</div></div>';
+}
+
+/* =========================================================
+   月次レポート
+========================================================= */
+let monthlyLoading = false;
+let monthlyReport = null;
+let monthOffset = 1;        // デモ：記録の揃った先月を初期表示
+const W2V = { sun: 3, cloud: 2, rain: 1 };
+
+// 対象月の基準日（その月の1日）
+function monthBase(off) {
+  const n = appNow();
+  return new Date(n.getFullYear(), n.getMonth() - off, 1);
+}
+// 開始月まで何ヶ月さかのぼれるか
+function maxMonthBack() {
+  if (!profile || !profile.startDate) return 0;
+  const s = dateFromKey(profile.startDate), n = appNow();
+  return Math.max(0, (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth()));
+}
+
+function collectMonth(off) {
+  const now = appNow();
+  const base = monthBase(off || 0);
+  const y = base.getFullYear(), mo = base.getMonth(), dim = new Date(y, mo + 1, 0).getDate();
+  const ym = y + "-" + String(mo + 1).padStart(2, "0");
+  const isCurrent = (off || 0) === 0;
+  const nH = profile.habits.length || 1;
+
+  let rec = 0, full = 0, jr = 0, doneCnt = 0;
+  const mind = [], body = [], wc = { sun: 0, cloud: 0, rain: 0 };
+  const perHabit = {}; profile.habits.forEach((h) => (perHabit[h.id] = 0));
+  const journalTexts = [];
+
+  for (let i = 1; i <= dim; i++) {
+    const k = ym + "-" + String(i).padStart(2, "0");
+    if (isCurrent && dateFromKey(k) > now) break;
+    const v = logs[k], j = journals[k];
+    if (v && (v.done || []).length) {
+      rec++; doneCnt += v.done.length;
+      if (v.done.length >= nH) full++;
+      v.done.forEach((id) => { if (perHabit[id] !== undefined) perHabit[id]++; });
+    }
+    if (j && j.savedAt) {
+      jr++;
+      const t = JOURNAL_QUESTIONS.map((q) => j[q.id]).filter(Boolean).join(" / ");
+      if (t) journalTexts.push(i + "日" + (j.stars ? "（重要度" + j.stars + "）" : "") + "：" + t);
+    }
+    if (j && j.mind) { wc[j.mind]++; mind.push({ d: i, v: W2V[j.mind] }); }
+    if (j && j.body) body.push({ d: i, v: W2V[j.body] });
+  }
+
+  const elapsed = isCurrent ? Math.min(dim, now.getDate()) : dim;
+  const tavDone = tavs.filter((t) => t.completedAt && t.completedAt.slice(0, 7) === ym);
+  const tavOpenN = tavs.filter((t) => ["plan","over","new"].includes(tavStatus(t))).length;
+  const tavSkipN = tavs.filter((t) => t.decision === "no").length;
+
+  return {
+    month: mo + 1, year: y, dim, elapsed,
+    kpi: { rate: Math.round(doneCnt / (nH * Math.max(1, elapsed)) * 100), rec, full, jr, tav: tavDone.length },
+    habits: profile.habits.map((h) => ({ name: h.name, done: perHabit[h.id], total: elapsed })),
+    mind, body, weather: wc,
+    tav: { done: tavDone.length, open: tavOpenN, skip: tavSkipN },
+    tavList: tavDone,
+    journalTexts,
+  };
+}
+
+// 記録量に応じて、どのセクションを出すかを決める
+function monthSections(m) {
+  const wTotal = m.weather.sun + m.weather.cloud + m.weather.rain;
+  return {
+    weather: wTotal >= 3,              // 天気が3日分以上
+    themes: m.journalTexts.length >= 3, // ジャーナル3件以上
+    balance: m.journalTexts.length >= 8,// ジャーナル8件以上
+    tav: (m.tav.done + m.tav.open + m.tav.skip) > 0,
+  };
+}
+
+function monthPrompt(m, sec) {
+  const lines = [];
+  lines.push("【対象】" + m.year + "年" + m.month + "月（" + m.elapsed + "日分）");
+  if (m.habits.length) {
+    lines.push("【習慣の達成状況】");
+    m.habits.forEach((h) => lines.push("・" + h.name + "：" + h.done + "/" + h.total + "日"));
+    lines.push("【記録した日】" + m.kpi.rec + "日（うち全習慣達成 " + m.kpi.full + "日）");
+  }
+  if (sec.weather) {
+    lines.push("【心と体の天気】晴れ" + m.weather.sun + "日／曇り" + m.weather.cloud + "日／雨" + m.weather.rain + "日");
+  }
+  if (m.tavList.length) {
+    lines.push("【実行した気づき(TAV)】");
+    m.tavList.forEach((t) => lines.push("・" + t.title + " → " + (t.review || "")));
+  }
+  if (m.journalTexts.length) {
+    lines.push("【ジャーナルの記述】");
+    m.journalTexts.slice(-25).forEach((t) => lines.push(t));
+  }
+  // 生成してほしい項目を明示（データがないものは作らせない）
+  const want = ["headline", "body", "question"];
+  if (sec.themes) want.push("themes");
+  if (sec.balance) want.push("balance");
+  lines.push("");
+  lines.push("【出力してほしい項目】" + want.join(", "));
+  if (!sec.themes) lines.push("※themesは出力しないでください（記録が少ないため）");
+  if (!sec.balance) lines.push("※balanceは出力しないでください（記録が少ないため）");
+  return lines.join("\n");
+}
+
+async function runMonthly() {
+  monthlyLoading = true; monthlyReport = null; render();
+  try {
+    const m = collectMonth(monthOffset);
+    const sec = monthSections(m);
+    const ai = await callAI("monthly", monthPrompt(m, sec));
+    monthlyReport = Object.assign({}, m, {
+      offset: monthOffset,
+      sec,
+      headline: ai.headline || "",
+      body_text: ai.body || "",
+      question: ai.question || "",
+      // データが足りない項目は、AIが返してきても使わない
+      themes: sec.themes && Array.isArray(ai.themes) ? ai.themes : [],
+      balance: sec.balance && Array.isArray(ai.balance) ? ai.balance : [],
+      at: Date.now(),
+    });
+  } catch (e) {
+    console.error("monthly", e);
+    monthlyReport = { error: String(e.message || e) };
+  }
+  monthlyLoading = false; render();
+}
+
+/* ---------- 月次レポートの描画 ---------- */
+function msLineChart(mind, body, dim) {
+  const W = 320, H = 96, P = 8;
+  const x = (d) => P + ((d - 1) / Math.max(1, dim - 1)) * (W - P * 2);
+  const y = (v) => H - P - ((v - 1) / 2) * (H - P * 2);
+  const path = (arr) => arr.length < 2 ? "" :
+    arr.map((p, i) => (i ? "L" : "M") + x(p.d).toFixed(1) + "," + y(p.v).toFixed(1)).join(" ");
+  const area = (arr) => arr.length < 2 ? "" :
+    path(arr) + " L" + x(arr[arr.length - 1].d).toFixed(1) + "," + (H - P) + " L" + x(arr[0].d).toFixed(1) + "," + (H - P) + " Z";
+  return '<svg class="ms-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+    [1, 2, 3].map((v) => '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(25,28,34,.1)" stroke-width="1"/>').join("") +
+    '<path d="' + area(mind) + '" fill="rgba(40,64,122,.10)"/>' +
+    '<path d="' + path(mind) + '" fill="none" stroke="#28407A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="' + path(body) + '" fill="none" stroke="#B08A3E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</svg>';
+}
+
+function msRadar(items) {
+  if (!items || !items.length) return "";
+  const S = 220, cc = S / 2, R = 78, n = items.length;
+  const pt = (i, r) => {
+    const a = -Math.PI / 2 + (i / n) * 2 * Math.PI;
+    return [(cc + Math.cos(a) * r).toFixed(1), (cc + Math.sin(a) * r).toFixed(1)];
+  };
+  let rings = "", spokes = "", labels = "";
+  [0.25, 0.5, 0.75, 1].forEach((fr) => {
+    rings += '<polygon points="' + items.map((_, i) => pt(i, R * fr).join(",")).join(" ") +
+      '" fill="none" stroke="rgba(25,28,34,.12)" stroke-width="1"/>';
+  });
+  items.forEach((it, i) => {
+    const [px, py] = pt(i, R);
+    spokes += '<line x1="' + cc + '" y1="' + cc + '" x2="' + px + '" y2="' + py + '" stroke="rgba(25,28,34,.1)" stroke-width="1"/>';
+    const [lx, ly] = pt(i, R + 22);
+    labels += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" class="ms-raxis">' + esc(it.axis) + '</text>';
+  });
+  const poly = items.map((it, i) => pt(i, R * (Math.max(0, Math.min(5, it.v)) / 5)).join(",")).join(" ");
+  return '<svg class="ms-radar" viewBox="0 0 ' + S + ' ' + S + '">' + rings + spokes +
+    '<polygon points="' + poly + '" fill="rgba(40,64,122,.18)" stroke="#28407A" stroke-width="2"/>' +
+    items.map((it, i) => { const [px, py] = pt(i, R * (Math.max(0, Math.min(5, it.v)) / 5)); return '<circle cx="' + px + '" cy="' + py + '" r="3.2" fill="#28407A"/>'; }).join("") +
+    labels + '</svg>';
+}
+
+function msDonut(dn, op, sk) {
+  const total = Math.max(1, dn + op + sk), R = 34, C = 2 * Math.PI * R;
+  let acc = 0;
+  const seg = (n, col) => {
+    const len = (n / total) * C;
+    const el = '<circle cx="45" cy="45" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="15" stroke-dasharray="' + len.toFixed(1) + ' ' + (C - len).toFixed(1) + '" stroke-dashoffset="' + (-acc).toFixed(1) + '" transform="rotate(-90 45 45)"/>';
+    acc += len; return el;
+  };
+  return '<svg class="ms-donut" viewBox="0 0 90 90">' +
+    seg(dn, "#28407A") + seg(op, "#B08A3E") + seg(sk, "rgba(25,28,34,.16)") +
+    '<text x="45" y="46" text-anchor="middle" class="ms-dnum">' + dn + '</text>' +
+    '<text x="45" y="58" text-anchor="middle" class="ms-dlab">実行</text></svg>';
+}
+
+function monthLabel(off) {
+  const b = monthBase(off);
+  return (b.getMonth() + 1) + "月" + (off === 0 ? "（今月）" : off === 1 ? "（先月）" : "");
+}
+
+function monthPickerHTML() {
+  const mb = maxMonthBack();
+  const opts = [];
+  for (let i = 0; i <= Math.min(mb, 11); i++) {
+    const b = monthBase(i);
+    opts.push('<option value="' + i + '"' + (i === monthOffset ? ' selected' : '') + '>' +
+      b.getFullYear() + '年' + (b.getMonth() + 1) + '月' +
+      (i === 0 ? '（今月）' : i === 1 ? '（先月）' : '') + '</option>');
+  }
+  if (opts.length <= 1) return "";
+  return '<div class="ms-pick"><label class="fld-label" style="margin:0">対象の月</label>' +
+    '<select class="fld ms-select" id="ms-month">' + opts.join("") + '</select></div>';
+}
+
+function milestoneHTML() {
+  const s = computeStats();
+  const n = s.stampedDays;
+  const items = MILESTONES.map((m) => {
+    const got = n >= m;
+    return '<div class="m-item' + (got ? ' got' : '') + '"><b>' + m + '日</b>' +
+      '<span>' + (got ? '達成' : 'あと' + (m - n) + '日') + '</span></div>';
+  }).slice(0, 4).join("");
+  return '<div class="ms-sec"><span class="ms-no">07</span><h3>積み重ねの節目</h3></div>' +
+    '<p class="ms-note">' + (hasHabits() ? '記録した日' : 'ジャーナルを書いた日') +
+      'の累計です。66日は、習慣が定着するまでの平均日数とされています。</p>' +
+    '<div class="mile">' + items + '</div>';
+}
+
+function monthlyHTML() {
+  const r = monthlyReport;
+  if (monthlyLoading) {
+    return '<section class="card ms"><h2 class="card-title">' + monthLabel(monthOffset) + 'のレポート</h2>' +
+      '<div class="ms-wait"><span class="fb-dots"><i></i><i></i><i></i></span>' +
+      '記録・ジャーナル・TAVを読み込んでいます…</div></section>';
+  }
+  if (r && r.error) {
+    return '<section class="card ms"><h2 class="card-title">レポート</h2>' +
+      '<p class="sync-err">作成できませんでした。<br>' + esc(r.error) + '</p>' +
+      monthPickerHTML() +
+      '<button class="btn-primary" id="ms-gen">もう一度ためす</button></section>';
+  }
+  if (!r) {
+    return '<section class="card ms"><h2 class="card-title">レポート</h2>' +
+      '<p class="card-sub">習慣の達成状況、心と体の推移、ジャーナルで語られたことをまとめます。月例会の前の準備にもお使いいただけます。</p>' +
+      monthPickerHTML() +
+      '<button class="btn-primary" id="ms-gen">' + monthLabel(monthOffset) + 'のレポートを作成する</button>' +
+      '<p class="note" style="text-align:center;margin-bottom:0">内容はあなたにだけ表示されます。</p></section>';
+  }
+
+  const k = r.kpi, w = r.weather;
+  const wtot = Math.max(1, w.sun + w.cloud + w.rain);
+  const habitBars = r.habits.map((h) => {
+    const p = h.total ? Math.round(h.done / h.total * 100) : 0;
+    return '<div class="ms-hb"><div class="ms-hb-top"><span>' + esc(h.name) + '</span><b>' + p + '%</b></div>' +
+      '<div class="ms-hb-track"><div class="ms-hb-fill" style="width:' + p + '%"></div></div>' +
+      '<div class="ms-hb-sub">' + h.done + ' / ' + h.total + ' 日</div></div>';
+  }).join("");
+  const themeRows = (r.themes || []).map((t, i) => {
+    const max = Math.max(1, (r.themes[0] || {}).n || 1);
+    return '<div class="ms-th"><span class="ms-th-rank">' + (i + 1) + '</span>' +
+      '<div class="ms-th-body"><div class="ms-th-name">' + esc(t.t) + '</div>' +
+      '<div class="ms-th-track"><div class="ms-th-fill" style="width:' + Math.round((t.n || 1) / max * 100) + '%"></div></div></div>' +
+      '</div>';
+  }).join("");
+  const wbar = (id, label, n) =>
+    '<div class="ms-wrow"><span class="ms-wlabel">' + label + '</span>' +
+    '<div class="ms-wtrack"><div class="ms-wfill w-' + id + '" style="width:' + Math.round(n / wtot * 100) + '%"></div></div>' +
+    '<span class="ms-wnum">' + n + '</span></div>';
+
+  return '<section class="card ms">' +
+    '<div class="ms-head-bar"><div><div class="ms-kicker">MONTHLY REPORT</div>' +
+      '<div class="ms-title">' + r.year + '年' + r.month + '月</div></div>' +
+      '<button class="btn-ghost sm" id="ms-regen">作り直す</button></div>' +
+    monthPickerHTML() +
+    (r.headline ? '<p class="ms-lead">' + esc(r.headline) + '</p>' : '') +
+    '<div class="ms-kpis">' +
+      (r.habits && r.habits.length
+        ? '<div class="ms-kpi"><b>' + k.rate + '<i>%</i></b><span>達成率</span></div>' +
+          '<div class="ms-kpi"><b>' + k.rec + '<i>日</i></b><span>記録</span></div>'
+        : '') +
+      '<div class="ms-kpi"><b>' + k.jr + '<i>件</i></b><span>ジャーナル</span></div>' +
+      '<div class="ms-kpi"><b>' + k.tav + '<i>件</i></b><span>TAV実行</span></div>' +
+    '</div>' +
+    (r.habits && r.habits.length
+      ? '<div class="ms-sec"><span class="ms-no">01</span><h3>習慣の達成率</h3></div>' +
+        '<div class="ms-habits">' + habitBars + '</div>'
+      : '') +
+    ((r.sec && r.sec.weather && (r.mind.length || r.body.length)) ?
+      '<div class="ms-sec"><span class="ms-no">02</span><h3>心と体の推移</h3></div>' +
+      msLineChart(r.mind, r.body, r.dim) +
+      '<div class="ms-legend"><span><i class="ms-dot" style="background:#28407A"></i>心</span>' +
+        '<span><i class="ms-dot" style="background:#B08A3E"></i>体</span>' +
+        '<span class="ms-legend-note">上＝晴れ／下＝雨</span></div>' +
+      '<div class="ms-weather">' + wbar("sun", "晴れ", w.sun) + wbar("cloud", "曇り", w.cloud) + wbar("rain", "雨", w.rain) + '</div>'
+      : '') +
+    ((r.balance && r.balance.length) ?
+      '<div class="ms-sec"><span class="ms-no">03</span><h3>意識の向き</h3></div>' +
+      '<p class="ms-note">ジャーナルの記述から、どの領域に意識が向いていたかを表したものです。</p>' +
+      '<div class="ms-radar-wrap">' + msRadar(r.balance) + '</div>' : '') +
+    ((r.themes && r.themes.length) ?
+      '<div class="ms-sec"><span class="ms-no">04</span><h3>よく書かれていたこと</h3></div>' +
+      '<div class="ms-themes">' + themeRows + '</div>' : '') +
+    (r.tav.done || r.tav.open || r.tav.skip ?
+      '<div class="ms-sec"><span class="ms-no">05</span><h3>気づきの行方</h3></div>' +
+      '<div class="ms-tav">' + msDonut(r.tav.done, r.tav.open, r.tav.skip) +
+        '<div class="ms-tav-legend">' +
+          '<div><i style="background:#28407A"></i>実行した <b>' + r.tav.done + '</b></div>' +
+          '<div><i style="background:#B08A3E"></i>実行中 <b>' + r.tav.open + '</b></div>' +
+          '<div><i style="background:rgba(25,28,34,.16)"></i>見送り <b>' + r.tav.skip + '</b></div>' +
+        '</div></div>' : '') +
+    (r.body_text ?
+      '<div class="ms-sec"><span class="ms-no">06</span><h3>今月の所見</h3></div>' +
+      '<div class="ms-body">' + r.body_text.split("\n\n").map((p) => '<p>' + esc(p) + '</p>').join("") + '</div>' : '') +
+    milestoneHTML() +
+    (r.question ?
+      '<div class="fb ms-q"><div class="fb-head"><span class="fb-mark">◇</span>' +
+      '<span class="fb-label">来月への問い</span><span class="fb-private">自分だけに表示</span></div>' +
+      '<p class="fb-q">' + esc(r.question) + '</p></div>' : '') +
+    '</section>';
+}
+
+/* ---------- TAV review (振り返りタブ) ---------- */
+function tavReviewHTML() {
+  const done = tavs.filter((t) => t.completedAt).sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
+  const skipped = tavs.filter((t) => tavStatus(t) === "no").length;
+  const active = tavs.filter((t) => ["plan", "over", "new"].includes(tavStatus(t))).length;
+
+  if (tavs.length === 0) {
+    return '<section class="card"><h2 class="card-title">実行したTAV</h2>' +
+      '<p class="empty">まだTAVがありません。「TAV」タブから、真似したいと思った気づきを書き留めてみましょう。</p></section>';
+  }
+
+  const rows = done.map((t) => {
+    const p = t.completedAt.split("-");
+    return '<details class="tvr"><summary>' +
+      '<span class="tvr-date">' + Number(p[1]) + '/' + Number(p[2]) + '</span>' +
+      '<span class="tvr-title">' + esc(t.title) + '</span></summary>' +
+      '<div class="tvr-body"><div class="tvr-q">やってみて</div><div class="tvr-a">' + esc(t.review) + '</div>' +
+      (t.memo ? '<div class="tvr-q">メモ</div><div class="tvr-a">' + esc(t.memo) + '</div>' : '') +
+      '</div></details>';
+  }).join("");
+
+  return '<section class="card"><h2 class="card-title">実行したTAV</h2>' +
+    '<p class="card-sub">気づきを実行に移した記録です。実行 ' + done.length + '件・実行中 ' + active + '件・見送り ' + skipped + '件。</p>' +
+    (done.length ? '<div class="tvr-list">' + rows + '</div>'
+      : '<p class="empty">まだ実行まで至ったTAVはありません。</p>') +
+    '</section>';
+}
+
+/* ---------- weather grid (振り返り) ---------- */
+function weatherGridHTML(kind, title) {
+  const year = appNow().getFullYear();
+  const today = appNow();
+  const count = { sun: 0, cloud: 0, rain: 0 };
+  const sM2 = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const eM2 = today.getFullYear() === year ? today.getMonth() : 11;
+  let grid = "";
+  for (let m = sM2; m <= eM2; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
+      const v = journals[k] && journals[k][kind];
+      if (v) count[v] = (count[v] || 0) + 1;
+      const style = v ? "background:" + WEATHER_COLOR[v] + ";border:1px solid transparent"
+        : "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    if (!cells) continue;
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+  const total = count.sun + count.cloud + count.rain;
+  if (total === 0) return "";
+  return '<div class="wg"><div class="wg-title">' + title +
+    '<span>晴れ ' + count.sun + '・曇り ' + count.cloud + '・雨 ' + count.rain + '</span></div>' +
+    '<div class="year-grid">' + grid + '</div></div>';
+}
+
+/* ---------- journal review (振り返りタブ) ---------- */
+function journalReviewHTML() {
+  const keys = Object.keys(journals).filter((k) => journals[k] && journals[k].savedAt).sort();
+  if (keys.length === 0) {
+    return '<section class="card"><h2 class="card-title">ジャーナルの記録</h2>' +
+      '<div class="empty-box"><div class="em-i">◇</div>' +
+      '<p>まだジャーナルの記録がありません。<br>心と体の天気をひとつ選ぶだけでも、<br>翌月の振り返りが変わります。</p></div></section>';
+  }
+  const year = appNow().getFullYear();
+  const today = appNow();
+
+  // 年間グリッド（記録した日）
+  const sM = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const eM = today.getFullYear() === year ? today.getMonth() : 11;
+  let grid = "";
+  for (let m = sM; m <= eM; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
+      const has = journals[k] && journals[k].savedAt;
+      const style = has ? "background:#B08A3E;border:1px solid transparent"
+        : "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    if (!cells) continue;
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+
+  // 月別グループ（新しい順・全文表示）
+  const byMonth = {};
+  keys.forEach((k) => {
+    const ym = k.slice(0, 7);
+    (byMonth[ym] = byMonth[ym] || []).push(k);
+  });
+  const months = Object.keys(byMonth).sort().reverse();
+  const entries = months.map((ym) => {
+    const p = ym.split("-");
+    const rows = byMonth[ym].sort().reverse().map((k) => {
+      const e = journals[k];
+      const d = k.split("-");
+      const body = JOURNAL_QUESTIONS.map((q) =>
+        e[q.id] ? '<div class="jrv-q">' + q.label + '</div><div class="jrv-a">' + esc(e[q.id]) + '</div>' : ''
+      ).join("");
+      const stars = e.stars ? '<span class="jrv-stars">' + "★".repeat(e.stars) + '</span>' : '';
+      const wIco = (id) => id ? '<span class="jrv-w w-' + id + '">' + weatherSVG(id) + '</span>' : '';
+      const wSet = (e.mind || e.body) ? '<span class="jrv-ws">' + wIco(e.mind) + wIco(e.body) + '</span>' : '';
+      return '<details class="jrv"><summary><span class="jrv-date">' + Number(d[1]) + '/' + Number(d[2]) + '</span>' + stars +
+        '<span class="jrv-peek">' + esc((JOURNAL_QUESTIONS.map((q) => e[q.id]).filter(Boolean).join(" ／ ")).slice(0, 34)) + '…</span></summary>' +
+        '<div class="jrv-body">' + body + '</div></details>';
+    }).join("");
+    return '<div class="jrv-month"><div class="jrv-month-label">' + p[0] + '年' + Number(p[1]) + '月' +
+      '<span>' + byMonth[ym].length + '日</span></div>' + rows + '</div>';
+  }).join("");
+
+  return '<section class="card"><h2 class="card-title">ジャーナルの記録</h2>' +
+    '<p class="card-sub">金の点がジャーナルを書いた日です。累計 ' + keys.length + '日ぶんの記録があります。</p>' +
+    '<div class="year-grid">' + grid + '</div>' +
+    weatherGridHTML("mind", "心の天気") +
+    weatherGridHTML("body", "体の天気") +
+    '<div class="jrv-list">' + entries + '</div></section>';
+}
+
+/* ---------- journal card (習慣タブ内) ---------- */
+function journalCardHTML() {
+  const key = targetKey();
+  const j = journals[key] || {};
+  const saved = !!j.savedAt;
+  const fields = JOURNAL_QUESTIONS.map((q) =>
+    '<label class="fld-label">' + q.label + '</label>' +
+    '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
+  ).join("");
+  return '<section class="card' + (saved ? ' card-done' : '') + '">' +
+    '<h2 class="card-title">' + (isPast() ? fmtDate(dateFromKey(key)) + 'のジャーナル' : '今日のジャーナル') +
+      '<span class="opt-tag">任意</span></h2>' +
+    '<div class="w-line">' + weatherRowHTML("mind", "心", j.mind) + weatherRowHTML("body", "体", j.body) + '</div>' +
+    fields +
+    '<label class="fld-label">この日の重要度</label>' +
+    '<div class="stars" id="jr-stars" data-val="' + (j.stars || 0) + '">' +
+      [1,2,3,4,5].map((n) =>
+        '<button class="star' + ((j.stars || 0) >= n ? ' on' : '') + '" data-star="' + n + '" aria-label="' + n + '段階">' +
+        '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/></svg></button>'
+      ).join("") +
+      '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
+    '</div>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<button class="btn-primary" id="jr-save">' + (saved ? '更新する' : '保存する') + '</button>' +
+    (saved ? '<p class="note" style="text-align:center;margin-bottom:0">保存済みです。</p>' : '') +
+    (fbLoading
+      ? '<div class="fb fb-wait"><span class="fb-dots"><i></i><i></i><i></i></span>今日の記録を読んでいます…</div>'
+      : feedbackHTML(j.feedback)) +
+    '</section>';
+}
+
+/* ---------- mini ring ---------- */
+function miniRingHTML() {
+  const now = appNow();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const useH = hasHabits();
+  let monthDays = 0;
+  for (let i = 1; i <= dim; i++) {
+    const k = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+    if (useH ? (logs[k] && (logs[k].done || []).length > 0)
+             : (journals[k] && journals[k].savedAt)) monthDays++;
+  }
+  const progress = Math.min(1, monthDays / dim);
+  const R = 34, C = 2 * Math.PI * R;
+  const complete = allThreeDone();
+  const col = complete ? "#B08A3E" : "#28407A";
+  return '<div class="mini-ring' + (complete ? ' gold' : '') + '" id="mini-ring" data-progress="' + progress + '">' +
+    '<svg viewBox="0 0 80 80">' +
+    '<circle cx="40" cy="40" r="' + R + '" fill="none" stroke="rgba(40,64,122,.14)" stroke-width="5"/>' +
+    '<circle id="mr-arc" cx="40" cy="40" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + C.toFixed(1) + '"/>' +
+    '</svg><div class="mini-ring-txt">' + monthDays + '<small>/' + dim + '</small></div></div>';
+}
+
+function allThreeDone() {
+  const k = todayKey();
+  const posted = !!(logs[k] && logs[k].posted);
+  const jr = !!(journals[k] && journals[k].savedAt);
+  const tv = tavs.some((t) => t.completedAt === k || t.touchedAt === k);
+  return posted && jr && tv;
+}
+
+function animateMiniRing() {
+  const wrap = $("#mini-ring");
+  if (!wrap || ringAnimated) return;
+  ringAnimated = true;
+  const progress = parseFloat(wrap.dataset.progress) || 0;
+  const arc = $("#mr-arc");
+  const C = 2 * Math.PI * 34;
+  if (prefersReduced()) {
+    arc.style.strokeDashoffset = C * (1 - progress); return;
+  }
+  const t0 = performance.now(), dur = 1100;
+  (function frame(t) {
+    const p = Math.min(((t || performance.now()) - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    arc.style.strokeDashoffset = C * (1 - progress * e);
+    if (p < 1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+/* ---------- journal view ---------- */
+function journalView() {
+  const key = todayKey();
+  const j = journals[key] || { q1: "", q2: "", q3: "", posted: false };
+  const d = appNow();
+  const wd = ["日","月","火","水","木","金","土"][d.getDay()];
+
+  const fields = JOURNAL_QUESTIONS.map((q) =>
+    '<label class="fld-label">' + q.label + '</label>' +
+    '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
+  ).join("");
+
+  const past = Object.keys(journals).filter((k) => k !== key).sort().reverse().slice(0, 30);
+  let history = "";
+  if (past.length) {
+    history = '<section class="card"><h2 class="card-title">これまでのジャーナル</h2>' +
+      past.map((k) => {
+        const e = journals[k];
+        const body = JOURNAL_QUESTIONS.map((q) => e[q.id]).filter(Boolean).join(" ／ ");
+        const p = k.split("-");
+        return '<div class="jr-past"><div class="jr-past-date">' + Number(p[1]) + '月' + Number(p[2]) + '日</div>' +
+          '<div class="jr-past-body">' + esc(body.length > 90 ? body.slice(0, 90) + "…" : body) + '</div></div>';
+      }).join("") + '</section>';
+  }
+
+  return '<main class="body">' +
+    '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
+    '<section class="card"><h2 class="card-title">今日のジャーナル</h2>' +
+    '<p class="card-sub">書ける問いだけで大丈夫です。記録はこの端末にのみ保存され、投稿しない限り誰にも共有されません。</p>' +
+    fields +
+    '<label class="fld-label">今日のジャーナルの重要度</label>' +
+    '<div class="stars" id="jr-stars" data-val="' + (j.stars || 0) + '">' +
+      [1,2,3,4,5].map((n) =>
+        '<button class="star' + ((j.stars || 0) >= n ? ' on' : '') + '" data-star="' + n + '" aria-label="' + n + '段階">' +
+        '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45 6.2 20.5l1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/></svg></button>'
+      ).join("") +
+      '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
+    '</div>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<button class="btn-primary" id="jr-save">保存する</button>' +
+    (j.savedAt ? '<p class="note" style="text-align:center">保存済みです。</p>' : '') +
+    '</section>' + history + '</main>';
+}
+
+/* ---------- TAV view ---------- */
+function tavStatus(t) {
+  if (t.decision === "no") return "no";
+  if (t.completedAt) return "done";
+  if (!t.decision) return "new";
+  if (t.due && dateFromKey(t.due) < dateFromKey(todayKey())) return "over";
+  return "plan";
+}
+const TAV_LABEL = { new: "未判定", plan: "予定", over: "期限切れ", done: "完了", no: "やらない" };
+const TAV_ORDER = { over: 0, plan: 1, new: 2, done: 3, no: 4 };
+
+function tavDueInfo(t) {
+  if (!t.due) return null;
+  const n = daysBetween(dateFromKey(todayKey()), dateFromKey(t.due));
+  const p = t.due.split("-");
+  const date = Number(p[1]) + "/" + Number(p[2]);
+  if (n < 0) return { n, date, text: Math.abs(n) + "日超過", cls: "over" };
+  if (n === 0) return { n, date, text: "今日", cls: "today" };
+  if (n === 1) return { n, date, text: "明日", cls: "today" };
+  if (n <= 7) return { n, date, text: "あと" + n + "日", cls: "soon" };
+  return { n, date, text: date, cls: "later" };
+}
+
+function tavView() {
+  const list = tavs.map((t) => ({ t, s: tavStatus(t) }));
+  const counts = {
+    active: list.filter((x) => ["over","plan","new"].includes(x.s)).length,
+    done:   list.filter((x) => x.s === "done").length,
+    no:     list.filter((x) => x.s === "no").length,
+  };
+  const q = tavQuery.trim().toLowerCase();
+  // 検索中はタブを横断して全件から探す
+  let shown = q ? list.slice() : list.filter((x) =>
+    tavFilter === "active" ? ["over","plan","new"].includes(x.s) :
+    tavFilter === "done" ? x.s === "done" : x.s === "no"
+  );
+  if (q) shown = shown.filter(({ t }) =>
+    (t.title || "").toLowerCase().includes(q) ||
+    (t.memo || "").toLowerCase().includes(q) ||
+    (t.review || "").toLowerCase().includes(q));
+
+  // ---- カード1件 ----
+  const card = ({ t, s }) => {
+    const di = tavDueInfo(t);
+    const expanded = !!tavOpen[t.id] || s === "over";
+    let actions = "";
+    if (s === "new") {
+      actions = '<button class="btn-ghost sm" data-tav-do="' + t.id + '">やる（期日を決める）</button>' +
+        '<button class="btn-ghost sm" data-tav-skip="' + t.id + '">やらない</button>';
+    } else if (s === "plan" || s === "over") {
+      actions = '<button class="btn-ghost sm" data-tav-done="' + t.id + '">実行した</button>' +
+        '<button class="btn-ghost sm" data-tav-do="' + t.id + '">期日を変える</button>' +
+        '<button class="btn-ghost sm" data-tav-skip="' + t.id + '">やらない</button>';
+    } else if (s === "no") {
+      actions = '<button class="btn-ghost sm" data-tav-revive="' + t.id + '">やっぱりやる</button>';
+    } else if (s === "done" && !t.shared && webhookUrl()) {
+      actions = '<button class="btn-ghost sm" data-tav-share="' + t.id + '">Slackに共有する</button>';
+    }
+    const effect = t.effect
+      ? '<span class="tav-eff e-' + t.effect + '">' + (t.effect === "good" ? "役に立った" : "いまひとつ") + '</span>' : "";
+    return '<div class="tav tav-' + s + (expanded ? " open" : "") + '">' +
+      '<button class="tav-row" data-tav-toggle="' + t.id + '">' +
+        '<span class="tav-title">' + esc(t.title) + '</span>' +
+        (di ? '<span class="tav-due d-' + di.cls + '">' + di.text + '</span>' : '') +
+        (s === "done" ? '<span class="tav-check">✓</span>' : '') +
+      '</button>' +
+      (expanded ?
+        '<div class="tav-body">' +
+          (t.memo ? '<div class="tav-memo">' + esc(t.memo) + '</div>' : '') +
+          (t.review ? '<div class="tav-review"><span>やってみて' + effect + '</span>' + esc(t.review) + '</div>' : '') +
+          (di && s !== "done" && s !== "no" ? '<div class="tav-date">期日 ' + di.date + '</div>' : '') +
+          (actions ? '<div class="tav-actions">' + actions + '</div>' : '') +
+          '<button class="tav-del" data-tav-del="' + t.id + '">削除</button>' +
+        '</div>' : '') +
+      '</div>';
+  };
+
+  // ---- 実行中タブは期日でグループ分け ----
+  let items = "";
+  if (shown.length === 0) {
+    items = '<p class="empty">' + (q ? "該当する気づきが見つかりません。"
+      : tavFilter === "active"
+        ? "まだ気づきがありません。月例会やふだんの会話で「これは真似したい」と思ったことを書き留めておきましょう。"
+        : "該当する気づきはまだありません。") + '</p>';
+  } else if (tavFilter === "active" && !q) {
+    const g = { over: [], today: [], week: [], later: [], none: [] };
+    shown.forEach((x) => {
+      if (x.s === "new") { g.none.push(x); return; }
+      const di = tavDueInfo(x.t);
+      if (!di) { g.none.push(x); return; }
+      if (di.n < 0) g.over.push(x);
+      else if (di.n <= 1) g.today.push(x);
+      else if (di.n <= 7) g.week.push(x);
+      else g.later.push(x);
+    });
+    const byDue = (a, b) => (a.t.due || "9999") < (b.t.due || "9999") ? -1 : 1;
+    const sec = (key, label, cls) => {
+      const arr = g[key].sort(byDue);
+      if (!arr.length) return "";
+      return '<div class="tav-group"><div class="tav-gh ' + cls + '">' + label +
+        '<span>' + arr.length + '</span></div>' + arr.map(card).join("") + '</div>';
+    };
+    items = sec("over", "期限切れ", "g-over") + sec("today", "今日・明日", "g-today") +
+            sec("week", "今週", "g-week") + sec("later", "これから", "g-later") +
+            sec("none", "未判定", "g-none");
+  } else {
+    items = shown.sort((a, b) =>
+      (b.t.completedAt || b.t.createdAt || "") < (a.t.completedAt || a.t.createdAt || "") ? -1 : 1
+    ).map(card).join("");
+  }
+
+  const chip = (k, label, n) =>
+    '<button class="chip' + (tavFilter === k ? " on" : "") + '" data-tavfilter="' + k + '">' + label + ' ' + n + '</button>';
+
+  // ---- 追加フォーム ----
+  const addForm = tavBulk
+    ? '<p class="card-sub">1行に1つずつ書いてください。月例会のメモをそのまま貼り付けられます。</p>' +
+      '<textarea class="fld bulk-ta" id="tav-bulk" placeholder="面談ではまず相手の原体験を聞く\n週次の数字を月曜の朝に確認する\n任せたら口を出さない"></textarea>' +
+      '<button class="btn-primary" id="tav-bulk-add">まとめて追加する</button>' +
+      '<button class="btn-ghost" id="tav-mode-one" style="margin-bottom:0">1件ずつ入力に戻す</button>'
+    : '<p class="card-sub">Takeaway Value — 人の話や日々の中で得た「これは真似したい」を、実行まで運ぶための場所です。</p>' +
+      '<input class="fld" id="tav-title" placeholder="例：面談ではまず相手の原体験を聞く">' +
+      '<textarea class="fld" id="tav-memo" placeholder="補足メモ（任意）"></textarea>' +
+      '<button class="btn-primary" id="tav-add">気づきを追加する</button>' +
+      '<button class="btn-ghost" id="tav-mode-bulk" style="margin-bottom:0">まとめて追加する</button>';
+
+  const total = tavs.length;
+  return '<main class="body">' +
+    '<section class="card"><h2 class="card-title">TAVを書き留める</h2>' + addForm + '</section>' +
+    '<section class="card"><div class="chips">' +
+      chip("active", "実行中・未判定", counts.active) + chip("done", "完了", counts.done) + chip("no", "やらない", counts.no) +
+    '</div>' +
+    (total >= 8 ? '<input class="fld tav-search" id="tav-q" type="search" placeholder="キーワードで絞り込む" value="' + esc(tavQuery) + '">' : '') +
+    (q ? '<p class="tav-qnote">「' + esc(tavQuery) + '」の検索結果　' + shown.length + '件<button class="tav-qclear" id="tav-q-clear">クリア</button></p>' : '') +
+    items + '</section></main>';
+}
+
+function recordView(stats) {
+  const year = appNow().getFullYear();
+  const nHabits = profile.habits.length || 1;
+  const today = appNow();
+  const startM = profile.startDate && dateFromKey(profile.startDate).getFullYear() === year
+    ? dateFromKey(profile.startDate).getMonth() : 0;
+  const endM = today.getFullYear() === year ? today.getMonth() : 11;
+  let grid = "";
+  for (let m = startM; m <= endM; m++) {
+    const dim = new Date(year, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 1; i <= dim; i++) {
+      const k = year + "-" + String(m + 1).padStart(2, "0") + "-" + String(i).padStart(2, "0");
+      const dd = dateFromKey(k);
+      if (profile.startDate && dd < dateFromKey(profile.startDate)) continue;
+      if (dd > today) continue;
+      const v = logs[k];
+      const ratio = v ? (v.done || []).length / nHabits : 0;
+      let style;
+      if (ratio >= 1) style = "background:#28407A;border:1px solid transparent";
+      else if (ratio > 0) style = "background:transparent;border:1.5px solid rgba(40,64,122," + (0.4 + ratio * 0.5).toFixed(2) + ")";
+      else style = "background:#EDEAE1;border:1px solid transparent";
+      cells += '<span class="cell" style="' + style + '" title="' + k + '"></span>';
+    }
+    if (!cells) continue;
+    grid += '<div class="month-row"><span class="month-label">' + (m + 1) + '月</span><div class="day-cells">' + cells + '</div></div>';
+  }
+
+  const last28 = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    last28.push(keyFromDate(d));
+  }
+  let habitRows = "";
+  profile.habits.forEach((h) => {
+    const hs = computeHabitStats(h.id);
+    const best = habitBestStreak(h.id);
+    const dots = last28.map((k) =>
+      '<span class="hd' + ((logs[k] && (logs[k].done || []).includes(h.id)) ? " on" : "") + '" title="' + k + '"></span>'
+    ).join("");
+    habitRows += '<div class="habit-row"><div class="habit-head">' +
+      '<span class="habit-name">' + esc(h.name) + '</span>' +
+      '<span class="habit-meta"><em>連続 ' + hs.streak + '日</em>' +
+      (best > hs.streak ? '　最長 <b>' + best + '日</b>' : '') +
+      '　達成率 ' + hs.rate + '%</span></div>' +
+      '<div class="habit-dots">' + dots + '</div></div>';
+  });
+
+  return '<main class="body">' +
+    '<div class="stat-band">' +
+      '<div class="stat"><div class="stat-val">' + stats.rate + '%</div><div class="stat-label">累計達成率</div></div>' +
+      '<div class="stat"><div class="stat-val">' + stats.streak + '日</div><div class="stat-label">連続日数</div></div>' +
+      '<div class="stat"><div class="stat-val">' + stats.stampedDays + '日</div><div class="stat-label">' +
+        (stats.useHabits ? '記録した日' : '書いた日') + '</div></div>' +
+    '</div>' +
+    (hasHabits() ? '<section class="card"><h2 class="card-title">' + year + '年の記録</h2>' +
+    '<p class="card-sub">一つの点が一日。すべて達成した日は塗りつぶし、一部達成の日は輪郭のみで表示されます。始めてからの日々だけを並べています。</p>' +
+    '<div class="year-grid">' + grid + '</div>' +
+    '<div class="glegend"><span><i class="gd gd-full"></i> すべて達成</span><span><i class="gd gd-part"></i> 一部達成</span><span><i class="gd gd-none"></i> 未記録</span></div>' +
+    '</section>' : '') +
+    (hasHabits() ? '<section class="card"><h2 class="card-title">習慣ごとの歩み</h2>' +
+    '<p class="card-sub">直近28日の記録です。どの習慣が続いているかを個別に確認できます。</p>' +
+    habitRows + '</section>' : '') +
+    monthlyHTML() +
+    tavReviewHTML() +
+    journalReviewHTML() +
+    '<section class="card"><h2 class="card-title">今月の記録カード</h2>' +
+    '<p class="card-sub">この月のドットと成績を1枚の画像（1080×1080）にまとめます。Slackやインスタでの共有用に。</p>' +
+    '<button class="btn-primary" id="dl-card">' + (appNow().getMonth() + 1) + '月の記録カードを保存する</button>' +
+    '<p class="note">スマホで保存されない場合は、開いた画像を長押しして「写真に保存」してください。</p>' +
+    '</section></main>';
+}
+
+function settingsView() {
+  const goalFields = profile.goals.map((g, i) =>
+    '<textarea class="fld st-goal" placeholder="目標 ' + (i + 1) + '">' + esc(g) + '</textarea>').join("");
+
+  const habitRows = profile.habits.map((h, i) =>
+    '<div class="st-hrow" data-hid="' + h.id + '">' +
+      '<div class="st-hmove">' +
+        '<button class="st-mv" data-mv="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="上へ">▲</button>' +
+        '<button class="st-mv" data-mv="down" data-i="' + i + '"' + (i === profile.habits.length - 1 ? ' disabled' : '') + ' aria-label="下へ">▼</button>' +
+      '</div>' +
+      '<input class="fld st-habit" data-hid="' + h.id + '" value="' + esc(h.name) + '">' +
+      '<button class="st-hdel" data-hdel="' + h.id + '" aria-label="削除">×</button>' +
+    '</div>').join("");
+
+  return '<main class="body">' +
+    '<section class="card"><h2 class="card-title">一年の目標（1〜3個）</h2>' +
+    '<div id="st-goals">' + goalFields + '</div>' +
+    (profile.goals.length < 3 ? '<button class="btn-ghost" id="st-add-goal">＋ 目標を追加</button>' : "") +
+    '<label class="fld-label">所属グループ</label>' +
+    (() => {
+      const g = GROUPS.find((x) => x.id === profile.group);
+      return g
+        ? '<div class="grp-fixed"><span class="grp-name">' + g.label + '</span>' +
+          '<span class="grp-note">' + g.note + '</span></div>' +
+          '<p class="note" style="margin-top:0">記録は' + g.label + 'のSlackチャンネルに投稿されます。変更が必要な場合は運営までご連絡ください。</p>'
+        : '<div class="grp-fixed none">未設定</div>' +
+          '<p class="note" style="margin-top:0">運営側でグループを設定します。設定されるまでSlackへの投稿はできません。</p>';
+    })() +
+    '<label class="fld-label">毎日の習慣<span class="opt-tag">任意</span></label>' +
+    '<div id="st-habits">' + habitRows + '</div>' +
+    (profile.habits.length ? '' : '<p class="note" style="margin-top:0">習慣は設定されていません。追加すると、毎日のチェックとSlackへの投稿ができるようになります。</p>') +
+    (profile.habits.length < 5 ? '<button class="btn-ghost" id="st-add-habit">＋ 習慣を追加</button>' : "") +
+    '<button class="btn-primary" id="st-save">保存する</button>' +
+    '<p class="note">▲▼で並び替え、×で削除できます。過去の記録は習慣ごとに保持されるため、並び替えても記録がずれることはありません。</p>' +
+    '</section>' +
+
+    (cloudEnabled() ? '<section class="card"><h2 class="card-title">アカウント</h2>' +
+      (signedIn()
+        ? '<p class="card-sub">' + esc(session.user.email) + '<br><span id="sync-text">' + syncLabel() + '</span></p>' +
+          (syncState === "error" && syncError
+            ? '<p class="sync-err">同期できませんでした。<br>' + esc(syncError) + '</p>' : '') +
+          '<p class="note" style="margin-top:0">記録はクラウドに保存され、スマートフォンとパソコンで同じ内容が見られます。</p>' +
+          '<button class="btn-primary" id="st-sync">今すぐ同期する</button>' +
+          '<button class="btn-ghost" id="st-signout" style="margin-bottom:0">ログアウト</button>'
+        : '<p class="card-sub">現在この端末だけに記録しています。ログインすると、他の端末とも同じ記録を見られます。</p>' +
+          '<button class="btn-ghost" id="st-signin" style="margin-bottom:0">ログインする</button>') +
+      '</section>' : '') +
+    '<section class="card"><h2 class="card-title">記録のバックアップ</h2>' +
+    '<p class="card-sub">' + (signedIn()
+      ? 'クラウドに保存されていますが、念のため手元にも控えておくと安心です。'
+      : '記録はこの端末のブラウザにのみ保存されています。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておくと安心です。') + '</p>' +
+    '<button class="btn-ghost" id="st-export">記録を書き出す（ファイル保存）</button>' +
+    '<button class="btn-ghost" id="st-import" style="margin-bottom:0">書き出したファイルから復元する</button>' +
+    '<input type="file" id="st-file" accept="application/json,.json" style="display:none">' +
+    '</section>' +
+
+    '<section class="card danger"><h2 class="card-title">記録帳をリセット</h2>' +
+    '<p class="card-sub">目標・習慣・毎日の記録・ジャーナル・TAVがすべて消えます。元に戻せません。</p>' +
+    '<button class="btn-ghost" id="st-reset">リセットする…</button>' +
+    '</section></main>';
+}
+
+
+/* =========================================================
+   クラウド同期
+========================================================= */
+let sb = null;              // Supabaseクライアント
+let session = null;         // ログインセッション
+let syncState = "off";      // off | ready | syncing | saved | error
+let syncError = "";         // 直近の同期エラー内容
+let pushTimer = null;
+let localOnly = localStorage.getItem("demo_local_only") === "1";
+let loginStep = "email";    // email | code
+let loginEmail = "";
+let cloudReady = false;     // initCloud 完了フラグ
+
+function cloudEnabled() { return !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase); }
+function signedIn() { return !!(sb && session); }
+
+async function initCloud() {
+  if (!cloudEnabled()) return;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+    const { data } = await sb.auth.getSession();
+    session = data ? data.session : null;
+    sb.auth.onAuthStateChange((_e, s) => {
+      const was = !!session;
+      session = s;
+      if (!was && s) { loginStep = "email"; render(); pullAndMerge(); }
+      if (was && !s) { syncState = "off"; render(); }
+    });
+    if (session) { syncState = "ready"; await pullAndMerge(); }
+    cloudReady = true;
+
+    // オンライン復帰・アプリ再表示で自動的に再同期
+    window.addEventListener("online", retrySync);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) retrySync();
+    });
+  } catch (e) { console.error("initCloud", e); cloudReady = true; }
+}
+
+let lastSyncAt = 0;
+async function retrySync() {
+  if (!signedIn()) return;
+  if (navigator.onLine === false) return;
+  // エラー時は即、通常時も30秒に1回まで
+  const now = Date.now();
+  if (syncState !== "error" && now - lastSyncAt < 30000) return;
+  lastSyncAt = now;
+  await pullAndMerge();
+  renderSyncBadge();
+}
+
+async function sendMagicLink(email) {
+  if (!sb) return { ok: false, msg: "同期が設定されていません" };
+  const { error } = await sb.auth.signInWithOtp({
+    email: email.trim(),
+    options: { emailRedirectTo: location.href.split("#")[0] },
+  });
+  if (error) {
+    const m = (error.message || "").toLowerCase();
+    if (m.includes("not allowed") || m.includes("signups")) return { ok: false, msg: "このメールアドレスは登録されていません" };
+    if (m.includes("rate") || m.includes("too many") || m.includes("security purposes"))
+      return { ok: false, msg: "短時間に何度も送信されました。1〜2分おいてから、もう一度お試しください。" };
+    if (m.includes("invalid") && m.includes("email")) return { ok: false, msg: "メールアドレスの形式をご確認ください" };
+    return { ok: false, msg: "送信できませんでした。しばらく待ってお試しください。" };
+  }
+  return { ok: true };
+}
+
+async function verifyCode(code) {
+  if (!sb) return { ok: false, msg: "同期が設定されていません" };
+  const { error } = await sb.auth.verifyOtp({
+    email: loginEmail, token: code.trim(), type: "email",
+  });
+  if (error) {
+    const m = (error.message || "").toLowerCase();
+    if (m.includes("expired")) return { ok: false, msg: "コードの有効期限が切れています。送り直してください" };
+    if (m.includes("invalid")) return { ok: false, msg: "コードが違います。もう一度ご確認ください" };
+    return { ok: false, msg: "確認できませんでした" };
+  }
+  return { ok: true };
+}
+
+async function signOutCloud() {
+  if (!sb) return;
+  await sb.auth.signOut();
+  session = null; syncState = "off";
+  showToast("ログアウトしました");
+  render();
+}
+
+/* --- マージ：日付キーは和集合、内容は新しい方（updated基準はクラウド優先） --- */
+function mergeAll(cloud) {
+  if (!cloud) return false;
+  let changed = false;
+  // profile：クラウド側に中身があれば採用（ローカルが空のときのみ上書きしない）
+  if (cloud.profile && cloud.profile.name) {
+    if (!profile || !profile.name) { profile = normalizeProfile(cloud.profile); changed = true; }
+    else {
+      const merged = normalizeProfile(cloud.profile);
+      // 習慣・目標はクラウドを正とする（最後に保存した端末の設定）
+      profile = Object.assign({}, profile, merged);
+      changed = true;
+    }
+  }
+  const mergeMap = (local, remote) => {
+    const out = Object.assign({}, remote || {});
+    Object.keys(local || {}).forEach((k) => {
+      if (!out[k]) { out[k] = local[k]; return; }
+      const a = local[k], b = out[k];
+      const doneA = (a.done || []).length, doneB = (b.done || []).length;
+      const savedA = a.savedAt || 0, savedB = b.savedAt || 0;
+      if (savedA || savedB) { if (savedA > savedB) out[k] = a; }
+      else if (doneA > doneB) out[k] = a;
+    });
+    return out;
+  };
+  const nl = mergeMap(logs, cloud.logs);
+  const nj = mergeMap(journals, cloud.journals);
+  if (JSON.stringify(nl) !== JSON.stringify(logs)) { logs = nl; changed = true; }
+  if (JSON.stringify(nj) !== JSON.stringify(journals)) { journals = nj; changed = true; }
+
+  const byId = {};
+  (cloud.tavs || []).forEach((t) => (byId[t.id] = t));
+  (tavs || []).forEach((t) => { if (!byId[t.id]) byId[t.id] = t; });
+  const nt = Object.values(byId);
+  if (JSON.stringify(nt) !== JSON.stringify(tavs)) { tavs = nt; changed = true; }
+  return changed;
+}
+
+let fetchedGroup = null;    // 名簿から取得したグループ（profile未作成でも保持）
+
+async function fetchGroup() {
+  if (!signedIn()) return;
+  try {
+    const email = (session.user.email || "").toLowerCase();
+    const { data, error } = await sb.from("member_groups")
+      .select("grp").eq("email", email).maybeSingle();
+    if (error) { console.error("group", error); return; }
+    fetchedGroup = data && data.grp ? data.grp : "";
+    applyFetchedGroup();
+  } catch (e) { console.error("fetchGroup", e); }
+}
+
+// オンボーディング完了後など、profileができた時点でも反映できるように
+function applyFetchedGroup() {
+  if (fetchedGroup === null || !profile) return false;
+  if (profile.group !== fetchedGroup) {
+    profile.group = fetchedGroup;
+    persistLocal();
+    return true;
+  }
+  return false;
+}
+
+async function pullAndMerge() {
+  if (!signedIn()) return;
+  syncState = "syncing"; render();
+  try {
+    const { data, error } = await sb.from("circle_data").select("*").eq("user_id", session.user.id).maybeSingle();
+    if (error) throw error;
+    if (data) mergeAll(data);
+    persistLocal();
+    await fetchGroup();
+    await pushNow();            // マージ結果を書き戻す
+    if (syncState !== "error") { syncState = "saved"; syncError = ""; }
+  } catch (e) {
+    console.error("pull", e);
+    syncState = "error";
+    syncError = (e && (e.message || e.error_description || e.details)) || String(e);
+  }
+  render();
+}
+
+async function pushNow() {
+  if (!signedIn()) return;
+  try {
+    const { error } = await sb.from("circle_data").upsert({
+      user_id: session.user.id,
+      profile: profile || {}, logs, journals, tavs,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    if (error) throw error;
+    syncState = "saved"; syncError = "";
+  } catch (e) {
+    console.error("push", e);
+    syncState = "error";
+    syncError = (e && (e.message || e.error_description || e.details)) || String(e);
+  }
+}
+
+function schedulePush() {
+  if (!signedIn()) return;
+  syncState = "syncing";
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => { await pushNow(); renderSyncBadge(); }, 1200);
+}
+
+function renderSyncBadge() {
+  const el = document.getElementById("sync-badge");
+  if (el) el.className = "sync-badge s-" + syncState;
+  const t = document.getElementById("sync-text");
+  if (t) t.textContent = syncLabel();
+}
+function syncLabel() {
+  return { off: "この端末のみ", ready: "同期中", syncing: "保存中…", saved: "同期済み", error: "同期エラー" }[syncState] || "";
+}
+
+/* ---------- login screen ---------- */
+function loginView() {
+  if (loginStep === "code") {
+    return '<div class="onb">' +
+      '<div class="onb-mark">' + RING + '</div>' +
+      '<h1 class="onb-title">Daily Circle</h1>' +
+      '<div class="onb-tate">日々の記録帳</div>' +
+      '<p class="onb-lead"><strong>' + esc(loginEmail) + '</strong> に<br>確認コードを送りました。<br>メールを開いて、コードを入力してください。</p>' +
+      '<div class="onb-card">' +
+        '<label class="fld-label">確認コード</label>' +
+        '<div class="code-row">' +
+          '<input class="fld code-input" id="lg-code" type="text" inputmode="numeric" ' +
+            'autocomplete="one-time-code" maxlength="10" placeholder="コードを入力">' +
+          '<button class="code-paste" id="lg-paste" aria-label="貼り付け">貼り付け</button>' +
+        '</div>' +
+        '<button class="btn-primary" id="lg-verify">ログインする</button>' +
+        '<p class="note" id="lg-msg">メールのコードを長押しして「コピー」→「貼り付け」が便利です。<br>コードは数分で期限切れになります。</p>' +
+        '<button class="btn-ghost" id="lg-back">メールアドレスを入れ直す</button>' +
+        '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+      '</div></div>';
+  }
+  return '<div class="onb">' +
+    '<div class="onb-mark">' + RING + '</div>' +
+    '<h1 class="onb-title">Daily Circle</h1>' +
+    '<div class="onb-tate">日々の記録帳</div>' +
+    '<p class="onb-lead">メールアドレスを入力すると、確認コードが届きます。パスワードは不要です。ログインすると、スマートフォンとパソコンで同じ記録を見られます。</p>' +
+    '<div class="onb-card">' +
+      '<label class="fld-label">メールアドレス</label>' +
+      '<input class="fld" id="lg-email" type="email" inputmode="email" autocomplete="email" ' +
+        'placeholder="you@example.com" value="' + esc(loginEmail) + '">' +
+      '<button class="btn-primary" id="lg-send">確認コードを送る</button>' +
+      '<p class="note" id="lg-msg">Circleに登録されているアドレスのみログインできます。</p>' +
+      '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+    '</div></div>';
+}
+
+/* ---------- settings helper ---------- */
+function collectSettings(validate) {
+  const goals = [...document.querySelectorAll(".st-goal")].map((e) => e.value.trim()).filter(Boolean);
+  const named = [...document.querySelectorAll(".st-habit")].map((e) => ({ id: e.dataset.hid, name: e.value.trim() }));
+  if (validate) {
+    if (goals.length === 0) { showToast("目標を1つ以上入力してください"); return false; }
+
+  }
+  if (goals.length) profile.goals = goals.slice(0, 3);
+  // 空欄の習慣は保存時のみ除外（編集途中は保持）
+  profile.habits = validate ? named.filter((h) => h.name) : named;
+  return true;
+}
+
+/* ---------- backup ---------- */
+function exportData() {
+  const payload = {
+    app: "daily-circle", version: 1, exportedAt: new Date().toISOString(),
+    profile, logs, journals, tavs,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "daily-circle-backup-" + todayKey() + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast("記録を書き出しました");
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let d;
+    try { d = JSON.parse(reader.result); } catch (e) { showToast("ファイルを読み込めませんでした"); return; }
+    if (!d || d.app !== "daily-circle" || !d.profile) { showToast("Daily Circleのバックアップではありません"); return; }
+    const days = Object.keys(d.logs || {}).length;
+    openModal({
+      title: "この内容で復元しますか？",
+      body: '<p class="card-sub">' + esc(d.profile.name || "") + ' さんの記録（習慣 ' + days + '日ぶん・ジャーナル ' +
+        Object.keys(d.journals || {}).length + '件・TAV ' + (d.tavs || []).length + '件）<br><br>' +
+        '<strong>現在この端末にある記録は上書きされます。</strong></p>',
+      okLabel: "復元する",
+      danger: true,
+      onOk: () => {
+        profile = normalizeProfile(d.profile);
+        logs = d.logs || {};
+        journals = d.journals || {};
+        tavs = d.tavs || [];
+        persist();
+        overlay = null; tab = "habit"; ringAnimated = false;
+        render();
+        showToast("記録を復元しました");
+      },
+    });
+  };
+  reader.readAsText(file);
+}
+
+function normalizeProfile(p) {
+  if (!p) return p;
+  const goals = p.goals || (p.goal ? [p.goal] : []);
+  const habits = (p.habits || p.actions || []).map((h, i) =>
+    typeof h === "string" ? { id: "a" + i, name: h } : h);
+  return Object.assign({}, p, { goals, habits });
+}
+
+function tabsView() {
+  const k = todayKey();
+  const habitDot = hasHabits()
+    ? (!(logs[k] && logs[k].posted) || !(journals[k] && journals[k].savedAt))
+    : !(journals[k] && journals[k].savedAt);
+  const tavCount = tavs.filter((t) => {
+    const s = tavStatus(t);
+    return s === "over" || (s === "plan" && t.due === k);
+  }).length;
+
+  const items = [
+    ["habit", hasHabits() ? "習慣" : "ジャーナル", habitDot ? "dot" : "", ""],
+    ["tav", "TAV", "", tavCount ? String(tavCount) : ""],
+    ["review", "振り返り", "", ""],
+  ];
+  return '<nav class="tabs">' + items.map(([key, label, dot, badge]) =>
+    '<button class="tab' + (tab === key ? " on" : "") + '" data-tab="' + key + '">' + label +
+    (badge ? '<span class="tab-badge">' + badge + '</span>' : (dot ? '<span class="tab-dot"></span>' : '')) +
+    '</button>'
+  ).join("") + '</nav>';
+}
+
+/* ---------- overlay (review / settings) ---------- */
+function overlayView(stats) {
+  const title = "設定";
+  const inner = settingsView();
+  return '<div class="ov"><div class="ov-bar"><button class="ov-back" id="ov-close">←</button>' +
+    '<span class="ov-title">' + title + '</span></div>' + inner + '</div>';
+}
+
+
+function bindLogin() {
+  const msg = $("#lg-msg");
+
+  // --- メール入力ステップ ---
+  const send = $("#lg-send"), email = $("#lg-email");
+  if (send && email) {
+    const doSend = async () => {
+      const v = (email.value || "").trim();
+      if (!v || v.indexOf("@") < 0) { msg.textContent = "メールアドレスを入力してください"; return; }
+      send.disabled = true; msg.textContent = "送信中…";
+      const r = await sendMagicLink(v);
+      if (r.ok) {
+        loginEmail = v; loginStep = "code";
+        render();
+      } else { msg.textContent = r.msg; send.disabled = false; }
+    };
+    send.onclick = doSend;
+    email.onkeydown = (e) => { if (e.key === "Enter") doSend(); };
+  }
+
+  // --- コード入力ステップ ---
+  const vf = $("#lg-verify"), code = $("#lg-code");
+  if (vf && code) {
+    let autoTimer = null;
+    const doVerify = async () => {
+      clearTimeout(autoTimer);
+      const v = (code.value || "").replace(/\D/g, "");
+      if (v.length < 6) { msg.textContent = "メールに記載のコードを入力してください"; return; }
+      vf.disabled = true; msg.textContent = "確認しています…";
+      const r = await verifyCode(v);
+      if (!r.ok) { msg.textContent = r.msg; vf.disabled = false; code.value = ""; }
+      // 成功時は onAuthStateChange が render を呼ぶ
+    };
+    vf.onclick = doVerify;
+    code.oninput = () => {
+      code.value = code.value.replace(/\D/g, "").slice(0, 10);
+      clearTimeout(autoTimer);
+      // 入力が止まって0.6秒後に自動送信（桁数が6/8どちらでも対応）
+      if (code.value.length >= 6) autoTimer = setTimeout(doVerify, 600);
+    };
+    code.onkeydown = (e) => { if (e.key === "Enter") doVerify(); };
+    setTimeout(() => { try { code.focus(); } catch (e) {} }, 100);
+  }
+
+  const paste = $("#lg-paste");
+  if (paste && code) paste.onclick = async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      const n = (t || "").replace(/\D/g, "").slice(0, 10);
+      if (!n) { msg.textContent = "コピーした内容に数字が見つかりませんでした"; return; }
+      code.value = n;
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+    } catch (e) {
+      msg.textContent = "貼り付けできませんでした。手入力してください。";
+    }
+  };
+
+  const back = $("#lg-back");
+  if (back) back.onclick = () => { loginStep = "email"; render(); };
+
+  const lo = $("#lg-local");
+  if (lo) lo.onclick = () => {
+    localOnly = true;
+    localStorage.setItem("demo_local_only", "1");
+    render();
+  };
+}
+
+/* ---------- render & bind ---------- */
+function render() {
+  const app = $("#app");
+  // 同期が有効かつ未ログイン、かつ「この端末だけ」を選んでいない場合はログイン画面
+  if (cloudEnabled() && !cloudReady && !localOnly) {
+    app.innerHTML = '<div class="onb"><div class="onb-mark">' + RING + '</div>' +
+      '<p class="onb-lead" style="margin-top:18px">読み込んでいます…</p></div>';
+    return;
+  }
+  if (cloudEnabled() && !signedIn() && !localOnly) {
+    app.innerHTML = loginView();
+    bindLogin();
+    return;
+  }
+  if (!profile) { app.innerHTML = onbView(); bindOnb(); return; }
+  const stats = computeStats();
+  if (overlay) {
+    app.innerHTML = overlayView(stats);
+    bindApp();
+    return;
+  }
+  let body = "";
+  if (tab === "habit") body = habitView();
+  else if (tab === "tav") body = tavView();
+  else body = recordView(stats);
+  app.innerHTML = headerView(stats) + body + tabsView();
+  bindApp();
+}
+
+function bindOnb() {
+  $("#ob-add-goal").onclick = () => {
+    const box = $("#ob-goals");
+    if (box.children.length >= 3) return;
+    const t = document.createElement("textarea");
+    t.className = "fld"; t.placeholder = "目標 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 3) $("#ob-add-goal").style.display = "none";
+  };
+  $("#ob-add-habit").onclick = () => {
+    const box = $("#ob-habits");
+    if (box.children.length >= 5) return;
+    const t = document.createElement("input");
+    t.className = "fld"; t.placeholder = "習慣 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 5) $("#ob-add-habit").style.display = "none";
+  };
+  $("#ob-start").onclick = () => {
+    const name = $("#ob-name").value.trim();
+    const goals = [...$("#ob-goals").children].map((e) => e.value.trim()).filter(Boolean);
+    const habits = [...$("#ob-habits").children].map((e) => e.value.trim()).filter(Boolean);
+    if (!name) { showToast("名前を入力してください"); return; }
+    if (goals.length === 0) { showToast("目標を1つ以上入力してください"); return; }
+
+    profile = {
+      name, goals, group: (profile && profile.group) || "",
+      habits: habits.slice(0, 5).map((n, i) => ({ id: "a" + i, name: n })),
+      startDate: todayKey(),
+    };
+    applyFetchedGroup();
+    persist();
+    render();
+    fetchGroup().then(() => render());
+  };
+}
+
+function bindApp() {
+  try {
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => { tab = b.dataset.tab; menuOpen = false; ringAnimated = false; dayOffset = 0; monthOffset = 1; monthlyReport = null; render(); }));
+
+  // header menu
+  const mb = $("#menu-btn");
+  if (mb) mb.onclick = (e) => { e.stopPropagation(); menuOpen = !menuOpen; render(); };
+  document.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => {
+    overlay = b.dataset.open; menuOpen = false; ringAnimated = false; render();
+  }));
+  const mbd = $("#menu-backdrop");
+  if (mbd) mbd.onclick = () => { menuOpen = false; render(); };
+  const ovc = $("#ov-close");
+  if (ovc) ovc.onclick = () => { overlay = null; ringAnimated = false; render(); };
+
+  // journal
+  const js = $("#jr-save");
+  if (js) js.onclick = saveJournal;
+  const fbr = $("#fb-retry");
+  if (fbr) fbr.onclick = () => runFeedback(targetKey());
+  document.querySelectorAll("[data-weather]").forEach((box) => {
+    box.querySelectorAll(".w-opt").forEach((b) => (b.onclick = () => {
+      const v = b.dataset.w;
+      const next = box.dataset.val === v ? "" : v;   // 同じものを再タップで解除
+      box.dataset.val = next;
+      box.querySelectorAll(".w-opt").forEach((x) => x.classList.toggle("on", x.dataset.w === next));
+    }));
+  });
+  const starBox = $("#jr-stars");
+  if (starBox) {
+    const paint = (v) => {
+      starBox.dataset.val = v;
+      starBox.querySelectorAll(".star").forEach((s) =>
+        s.classList.toggle("on", Number(s.dataset.star) <= v));
+      const cl = $("#jr-star-clear");
+      if (cl) cl.textContent = v ? "クリア" : "";
+    };
+    starBox.querySelectorAll(".star").forEach((s) =>
+      (s.onclick = () => paint(Number(s.dataset.star))));
+    const cl = $("#jr-star-clear");
+    if (cl) cl.onclick = () => paint(0);
+  }
+
+  // TAV
+  const ta = $("#tav-add");
+  if (ta) ta.onclick = addTav;
+  const tb = $("#tav-bulk-add");
+  if (tb) tb.onclick = addTavBulk;
+  const tModeB = $("#tav-mode-bulk");
+  if (tModeB) tModeB.onclick = () => { tavBulk = true; render(); };
+  const tModeO = $("#tav-mode-one");
+  if (tModeO) tModeO.onclick = () => { tavBulk = false; render(); };
+  document.querySelectorAll("[data-tav-toggle]").forEach((b) => (b.onclick = () => {
+    const id = b.dataset.tavToggle;
+    tavOpen[id] = !tavOpen[id];
+    render();
+  }));
+  const tqc = $("#tav-q-clear");
+  if (tqc) tqc.onclick = () => { tavQuery = ""; render(); };
+  const tq = $("#tav-q");
+  if (tq) {
+    tq.oninput = () => {
+      const pos = tq.selectionStart;
+      tavQuery = tq.value;
+      clearTimeout(window.__tavQT);
+      window.__tavQT = setTimeout(() => {
+        render();
+        const el = $("#tav-q");
+        if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} }
+      }, 250);
+    };
+  }
+  document.querySelectorAll("[data-tavfilter]").forEach((b) => (b.onclick = () => { tavFilter = b.dataset.tavfilter; render(); }));
+  document.querySelectorAll("[data-tav-do]").forEach((b) => (b.onclick = () => tavSetDue(b.dataset.tavDo)));
+  document.querySelectorAll("[data-tav-done]").forEach((b) => (b.onclick = () => tavComplete(b.dataset.tavDone)));
+  document.querySelectorAll("[data-tav-skip]").forEach((b) => (b.onclick = () => tavSkip(b.dataset.tavSkip)));
+  document.querySelectorAll("[data-tav-share]").forEach((b) => (b.onclick = () => tavShare(b.dataset.tavShare)));
+  document.querySelectorAll("[data-tav-revive]").forEach((b) => (b.onclick = () => tavRevive(b.dataset.tavRevive)));
+  document.querySelectorAll("[data-tav-del]").forEach((b) => (b.onclick = () => tavDelete(b.dataset.tavDel)));
+
+  document.querySelectorAll(".action-row").forEach((b) => (b.onclick = () => toggleHabit(b.dataset.habit)));
+  const post = $("#post-today");
+  if (post) post.onclick = postToday;
+  if ($("#mini-ring")) animateMiniRing();
+  const goDay = (n) => {
+    dayOffset = Math.max(0, Math.min(maxBack(), n));
+    ringAnimated = false; render();
+  };
+  const dp = $("#day-prev"); if (dp) dp.onclick = () => goDay(dayOffset + 1);
+  const dn = $("#day-next"); if (dn) dn.onclick = () => goDay(dayOffset - 1);
+  const dt = $("#day-today"); if (dt) dt.onclick = () => goDay(0);
+  const pick = $("#day-pick");
+  if (pick) pick.onchange = () => {
+    if (!pick.value) return;
+    goDay(daysBetween(dateFromKey(pick.value), dateFromKey(todayKey())));
+  };
+  document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { tab = b.dataset.goto; ringAnimated = false; render(); }));
+  const msSel = $("#ms-month");
+  if (msSel) msSel.onchange = () => {
+    monthOffset = Number(msSel.value) || 0;
+    monthlyReport = null;          // 月を変えたら作り直し
+    render();
+  };
+  const msg2 = $("#ms-gen") || $("#ms-regen");
+  if (msg2) msg2.onclick = runMonthly;
+  const dl = $("#dl-card");
+  if (dl) dl.onclick = generateCard;
+  } catch (e) { console.error("bindApp:", e); }
+
+  const addGoal = $("#st-add-goal");
+  if (addGoal) addGoal.onclick = () => {
+    const box = $("#st-goals");
+    if (box.children.length >= 3) return;
+    const t = document.createElement("textarea");
+    t.className = "fld st-goal"; t.placeholder = "目標 " + (box.children.length + 1);
+    box.appendChild(t);
+    if (box.children.length >= 3) addGoal.style.display = "none";
+  };
+  const addHabit = $("#st-add-habit");
+  if (addHabit) addHabit.onclick = () => {
+    if (profile.habits.length >= 5) return;
+    collectSettings();
+    profile.habits.push({ id: uid(), name: "" });
+    persist(); render();
+  };
+  document.querySelectorAll("[data-mv]").forEach((b) => (b.onclick = () => {
+    collectSettings();
+    const i = Number(b.dataset.i), j = b.dataset.mv === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= profile.habits.length) return;
+    const t = profile.habits[i]; profile.habits[i] = profile.habits[j]; profile.habits[j] = t;
+    persist(); render();
+  }));
+  document.querySelectorAll("[data-hdel]").forEach((b) => (b.onclick = () => {
+    const id = b.dataset.hdel;
+    const h = profile.habits.find((x) => x.id === id);
+    openModal({
+      title: "この習慣を削除しますか？",
+      body: '<p class="card-sub">「' + esc(h ? h.name : "") + '」を一覧から外します。過去の記録は残りますが、今後の記録対象ではなくなります。</p>',
+      okLabel: "削除する", danger: true,
+      onOk: () => {
+        collectSettings();
+        profile.habits = profile.habits.filter((x) => x.id !== id);
+        persist(); render(); showToast("習慣を削除しました");
+      },
+    });
+  }));
+
+  const sy = $("#st-sync");
+  if (sy) sy.onclick = async () => {
+    sy.disabled = true; sy.textContent = "同期しています…";
+    await pullAndMerge();
+    showToast(syncState === "error" ? "同期に失敗しました" : "同期しました");
+  };
+  const dr = $("#demo-reset");
+  if (dr) dr.onclick = () => {
+    menuOpen = false;
+    openModal({
+      title: "サンプルに戻しますか",
+      body: '<p class="card-sub">デモ中に入力した内容は消え、最初のサンプルデータに戻ります。</p>',
+      okLabel: "戻す",
+      onOk: () => {
+        loadDemoSeed(true);
+        profile = load("demo_profile");
+        logs = load("demo_logs") || {};
+        journals = load("demo_journals") || {};
+        tavs = load("demo_tavs") || [];
+        monthlyReport = null; dayOffset = 0; monthOffset = 1; tab = "habit";
+        render();
+        showToast("サンプルに戻しました");
+      },
+    });
+  };
+  const so = $("#st-signout");
+  if (so) so.onclick = signOutCloud;
+  const si = $("#st-signin");
+  if (si) si.onclick = () => {
+    localOnly = false;
+    localStorage.removeItem("demo_local_only");
+    overlay = null;
+    render();
+  };
+
+  const exp = $("#st-export");
+  if (exp) exp.onclick = exportData;
+  const imp = $("#st-import"), file = $("#st-file");
+  if (imp && file) {
+    imp.onclick = () => file.click();
+    file.onchange = () => { if (file.files && file.files[0]) importData(file.files[0]); file.value = ""; };
+  }
+
+  const save = $("#st-save");
+  if (save) save.onclick = () => {
+    if (!collectSettings(true)) return;
+    persist();
+    showToast("保存しました");
+    render();
+  };
+  const reset = $("#st-reset");
+  if (reset) reset.onclick = () => {
+    if (reset.dataset.armed) {
+      ["demo_profile","demo_logs","demo_journals","demo_tavs"].forEach((k) => localStorage.removeItem(k));
+      profile = null; logs = {}; journals = {}; tavs = []; tab = "habit"; overlay = null;
+      render();
+    } else {
+      reset.dataset.armed = "1";
+      reset.textContent = "本当にすべて削除する";
+      reset.className = "btn-danger";
+    }
+  };
+}
+
+render();
+initCloud().then(() => render());
+</script>
+</body>
+</html>
