@@ -1,0 +1,14 @@
+{
+  "name": "Daily Circle",
+  "short_name": "Daily Circle",
+  "description": "一年の目標を、日々の習慣で積み重ねる記録帳",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F7F4EE",
+  "theme_color": "#28407A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
