@@ -2430,7 +2430,9 @@ let session = null;         // ログインセッション
 let syncState = "off";      // off | ready | syncing | saved | error
 let syncError = "";         // 直近の同期エラー内容
 let pushTimer = null;
-let localOnly = localStorage.getItem("circle_local_only") === "1";
+// 「この端末だけで使う」は廃止。過去に選んだ人も自動でログイン画面に戻す
+try { localStorage.removeItem("circle_local_only"); } catch (e) {}
+let localOnly = false;
 let loginStep = "email";    // email | code
 let loginEmail = "";
 let cloudReady = false;     // initCloud 完了フラグ
@@ -2648,8 +2650,7 @@ function loginView() {
         '</div>' +
         '<button class="btn-primary" id="lg-verify">ログインする</button>' +
         '<p class="note" id="lg-msg">メールのコードを長押しして「コピー」→「貼り付け」が便利です。<br>コードは数分で期限切れになります。</p>' +
-        '<button class="btn-ghost" id="lg-back">メールアドレスを入れ直す</button>' +
-        '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+        '<button class="btn-ghost" id="lg-back" style="margin-bottom:0">メールアドレスを入れ直す</button>' +
       '</div></div>';
   }
   return '<div class="onb">' +
@@ -2662,8 +2663,7 @@ function loginView() {
       '<input class="fld" id="lg-email" type="email" inputmode="email" autocomplete="email" ' +
         'placeholder="you@example.com" value="' + esc(loginEmail) + '">' +
       '<button class="btn-primary" id="lg-send">確認コードを送る</button>' +
-      '<p class="note" id="lg-msg">Circleに登録されているアドレスのみログインできます。</p>' +
-      '<button class="btn-ghost" id="lg-local" style="margin-bottom:0">この端末だけで使う</button>' +
+      '<p class="note" id="lg-msg" style="margin-bottom:0">Circleに登録されているアドレスのみログインできます。</p>' +
     '</div></div>';
 }
 
@@ -2824,12 +2824,6 @@ function bindLogin() {
   const back = $("#lg-back");
   if (back) back.onclick = () => { loginStep = "email"; render(); };
 
-  const lo = $("#lg-local");
-  if (lo) lo.onclick = () => {
-    localOnly = true;
-    localStorage.setItem("circle_local_only", "1");
-    render();
-  };
 }
 
 /* ---------- render & bind ---------- */
