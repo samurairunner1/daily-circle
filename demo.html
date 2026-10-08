@@ -920,47 +920,9 @@ async function generateCard() {
 }
 
 
-/* ---------- weekly report ---------- */
+/* ---------- 日付の表示 ---------- */
 const WD = ["日","月","火","水","木","金","土"];
 function fmtDate(d) { return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; }
-
-function mondayOf(d) {
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // 月曜起点
-  return x;
-}
-
-function weeklyReportMsg() {
-  if (!hasHabits()) return null;
-  const M = mondayOf(appNow());
-  const wk = keyFromDate(M);
-  if ((profile.lastWeeklyReport || "") === wk) return null;
-  const prevM = new Date(M); prevM.setDate(prevM.getDate() - 7);
-  if (dateFromKey(profile.startDate) > new Date(M.getTime() - 1)) return null; // 先週より後に開始した人はスキップ
-  const dayKeys = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(prevM); d.setDate(d.getDate() + i);
-    dayKeys.push(keyFromDate(d));
-  }
-  let recDays = 0;
-  dayKeys.forEach((k) => { if (logs[k] && (logs[k].done || []).length > 0) recDays++; });
-  const lines = profile.habits.map((h) => {
-    let row = "", n = 0;
-    dayKeys.forEach((k) => {
-      const on = logs[k] && (logs[k].done || []).includes(h.id);
-      row += on ? "◉" : "○";
-      if (on) n++;
-    });
-    return row + "　" + h.name + "　" + Math.round(n / 7 * 100) + "%";
-  }).join("\n");
-  const s = computeStats();
-  return {
-    wk,
-    text: "*" + fmtDate(dateFromKey(dayKeys[0])) + "〜" + fmtDate(dateFromKey(dayKeys[6])) +
-      "　" + profile.name + " の一週間*\n" + lines +
-      "\n\n記録した日 " + recDays + "/7　　:fire: " + s.streak + "日連続"
-  };
-}
 
 /* ---------- actions ---------- */
 function toggleHabit(habitId) {
@@ -1001,16 +963,6 @@ function postToday() {
       render();
       if (milestone) showCelebration(milestone);
       showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
-      const wr = isPast() ? null : weeklyReportMsg();   // 週次は今日の投稿時のみ
-      if (wr) {
-        sendSlack(wr.text).then((ok2) => {
-          if (ok2) {
-            profile.lastWeeklyReport = wr.wk;
-            persist();
-            showToast("先週のふりかえりも投稿しました");
-          }
-        });
-      }
     } else {
       showToast("投稿に失敗しました。通信環境を確認してください");
     }
@@ -1125,13 +1077,17 @@ function saveJournal() {
   persist();
 
   if (share && webhookUrl()) {
-    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "_" + q.label + "_\n" + entry[q.id] : "")
+    // 問いは太字の見出しに（Slackで本文と区別しやすくするため）
+    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "*" + q.label + "*\n" + entry[q.id] : "")
       .filter(Boolean).join("\n\n");
     const d = dateFromKey(key);
     const st = entry.stars ? "　" + "★".repeat(entry.stars) + "☆".repeat(5 - entry.stars) : "";
-    const wOf = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.label : "—"; };
-    const wl = (entry.mind || entry.body)
-      ? "心 " + wOf(entry.mind) + "　体 " + wOf(entry.body) + "\n\n" : "";
+    // 天気は絵文字で（文字より早く目に入る）
+    const wEmoji = (id) => { const w = WEATHER.find((x) => x.id === id); return w ? w.emoji : ""; };
+    const wParts = [];
+    if (entry.mind) wParts.push(wEmoji(entry.mind) + " 心");
+    if (entry.body) wParts.push(wEmoji(entry.body) + " 体");
+    const wl = wParts.length ? wParts.join("　") + "\n\n" : "";
     sendSlack("*" + fmtDate(d) + "　" + profile.name + " のジャーナル*" +
       (isPast() ? "（後から記録）" : "") + st + "\n" +
       wl + body).then((ok) => {
