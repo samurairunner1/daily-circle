@@ -75,21 +75,36 @@ body{
 .card-sub{font-size:12.5px;color:#4A4E58;margin-bottom:12px;line-height:1.9}
 
 /* habits */
+/* 完了／未完了が一目で分かるよう、丸だけでなく行ごと塗り分ける */
 .action-row{
-  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
   background:transparent;border:none;border-bottom:1px solid rgba(25,28,34,.1);
-  padding:12px 2px;cursor:pointer;font-family:inherit;color:inherit;font-size:15px;
+  padding:12px 10px 12px 2px;cursor:pointer;font-family:inherit;color:inherit;font-size:15px;
+  position:relative;border-radius:2px;transition:background .2s;
 }
 .action-row:last-of-type{border-bottom:none}
+.action-row.done{background:rgba(40,64,122,.07)}
+.action-row.done::after{
+  content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;background:#28407A;border-radius:2px;
+}
 .stamp{
-  width:38px;height:38px;border-radius:50%;flex-shrink:0;
-  border:1.5px solid rgba(40,64,122,.35);display:flex;align-items:center;justify-content:center;
-  font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;color:transparent;
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;margin-left:8px;
+  border:2px dashed rgba(25,28,34,.34);display:flex;align-items:center;justify-content:center;
+  font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16px;color:rgba(25,28,34,.3);
+  background:rgba(25,28,34,.035);
   transition:all .25s cubic-bezier(.22,1,.36,1);
 }
-.stamp.pressed{border-color:#28407A;color:#F7F4EE;background:#28407A;box-shadow:0 4px 12px rgba(27,44,88,.24)}
-.action-row.done .action-name{color:#4A4E58}
-.action-name{font-weight:500;letter-spacing:.02em}
+.stamp.pressed{
+  border:2px solid #28407A;color:#F7F4EE;background:#28407A;
+  box-shadow:0 4px 12px rgba(27,44,88,.24);
+}
+.action-row.done .action-name{color:#191C22;font-weight:700}
+.action-name{font-weight:500;letter-spacing:.02em;color:#4A4E58}
+.habit-count{
+  font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.06em;
+  color:#28407A;margin-left:10px;vertical-align:1px;
+}
+.habit-count.all{color:#B08A3E}
 .all-done{margin-top:12px;font-family:'Shippori Mincho B1',serif;color:#28407A;font-size:13.5px;text-align:center;letter-spacing:.08em}
 
 /* fields & buttons */
@@ -940,19 +955,28 @@ function postToday() {
   const day = logs[key] || { done: [] };
   if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
   const s = computeStats();
+  // 完了／未完了の印は「済」「未」を使う。実機で検証した結果がこれ：
+  //   ◉ / ○      → Narrow と Ambiguous で幅が違い、縦が揃わない
+  //   ☑ / ☐ / □  → ☑ だけ Slack が絵文字画像に置き換えるため、テキストと混在して大きくズレる
+  //   済 / 未     → どちらも CJK統合漢字（East Asian Width = W の全角固定）。絵文字化もされず必ず揃う
+  // さらに、できた習慣だけ太字にして二重に差をつける。
   const lines = profile.habits.map((h) => {
     const done = day.done.includes(h.id);
     const hs = done ? computeHabitStats(h.id) : null;
-    return (done ? "◉ " : "○ ") + h.name + (done && hs.streak ? "　" + hs.streak + "日" : "");
+    return (done ? "済　*" + h.name + "*" : "未　" + h.name) +
+      (done && hs.streak ? "　" + hs.streak + "日" : "");
   }).join("\n");
   const isUpdate = !!day.posted;
   const celebrated = profile.celebrated || [];
   const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
   const dd = dateFromKey(key);
-  const msg = "*" + fmtDate(dd) + "　" + profile.name + "*" +
+  const nDone = day.done.filter((id) => profile.habits.some((h) => h.id === id)).length;
+  const msg = "*" + fmtDate(dd) + "　" + profile.name + "*　" + nDone + "/" + profile.habits.length +
     (isPast() ? "（後から記録）" : "") + (isUpdate ? "（更新）" : "") + "\n" +
     lines +
-    "\n\n:fire: " + s.streak + "日連続　　達成率 " + s.rate + "%" +
+    // 毎日出る数字に絵文字を付けると、毎日やかましいだけで情報が増えない
+    "\n\n" + s.streak + "日連続　　達成率 " + s.rate + "%" +
+    // 節目だけは年に数回しか出ないので、ここは絵文字が効く
     (milestone ? "\n\n:tada: 祝・" + milestone + "日連続達成" : "");
   sendSlack(msg).then((ok) => {
     if (ok) {
@@ -1056,6 +1080,43 @@ function feedbackHTML(fb) {
 }
 
 /* ---------- journal actions ---------- */
+
+/* 画面を描き直す前に、書きかけのジャーナルを下書きとして退避する。
+   習慣の「保存する」などで render() が走ると入力欄が作り直されるため、
+   これがないと書きかけの本文が消えてしまう。
+   savedAt は付けないので、記録日数・達成率・レポートには一切カウントされない。
+   クラウド同期も走らせない（保存するまでは端末内だけに置く）。 */
+function captureJournalDraft() {
+  const box = document.querySelector("[data-jr-key]");
+  if (!box) return;
+  const key = box.dataset.jrKey;
+  if (!key) return;
+  const entry = journals[key] || {};
+  let touched = false;
+
+  box.querySelectorAll(".jr-field").forEach((el) => {
+    if ((entry[el.dataset.q] || "") !== el.value) { entry[el.dataset.q] = el.value; touched = true; }
+  });
+  box.querySelectorAll("[data-weather]").forEach((el) => {
+    const v = el.dataset.val || "";
+    if ((entry[el.dataset.weather] || "") !== v) { entry[el.dataset.weather] = v; touched = true; }
+  });
+  const sb = box.querySelector("#jr-stars");
+  if (sb) {
+    const v = Number(sb.dataset.val || 0);
+    if ((entry.stars || 0) !== v) { entry.stars = v; touched = true; }
+  }
+  const sh = box.querySelector("#jr-share");
+  if (sh) {
+    const cur = ("shareWanted" in entry) ? !!entry.shareWanted : !!entry.posted;
+    if (cur !== !!sh.checked) { entry.shareWanted = !!sh.checked; touched = true; }
+  }
+
+  if (!touched) return;
+  journals[key] = entry;
+  persistLocal();
+}
+
 function saveJournal() {
   const key = targetKey();
   const entry = journals[key] || {};
@@ -1073,12 +1134,16 @@ function saveJournal() {
   entry.stars = starBox ? Number(starBox.dataset.val || 0) : (entry.stars || 0);
   entry.savedAt = Date.now();
   const share = $("#jr-share") && $("#jr-share").checked;
+  entry.shareWanted = !!share;   // 下書き復元時にチェック状態を保つため
   journals[key] = entry;
   persist();
 
   if (share && webhookUrl()) {
     // 問いは太字の見出しに（Slackで本文と区別しやすくするため）
-    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "*" + q.label + "*\n" + entry[q.id] : "")
+    // 本文は引用ブロックに入れる（問いの見出しと本文の境目をはっきりさせるため）
+    // 改行を含む本文でも引用が途切れないよう、空行も含めて全行の先頭に ">" を付ける
+    const quote = (s) => String(s).replace(/\r\n?/g, "\n").split("\n").map((l) => ">" + (l ? " " + l : "")).join("\n");
+    const body = JOURNAL_QUESTIONS.map((q) => entry[q.id] ? "*" + q.label + "*\n" + quote(entry[q.id]) : "")
       .filter(Boolean).join("\n\n");
     const d = dateFromKey(key);
     const st = entry.stars ? "　" + "★".repeat(entry.stars) + "☆".repeat(5 - entry.stars) : "";
@@ -1332,13 +1397,19 @@ function habitView() {
 
   // 習慣カード（設定している人だけ）
   if (hasHabits()) {
+  const doneN = profile.habits.filter((h) => day.done.includes(h.id)).length;
+  const totalN = profile.habits.length;
   html += '<section class="card' + (day.posted ? ' card-done' : '') + '"><h2 class="card-title">' +
-    (isPast() ? fmtDate(dateFromKey(tk)) + 'の習慣' : '今日の習慣') + '</h2>';
+    (isPast() ? fmtDate(dateFromKey(tk)) + 'の習慣' : '今日の習慣') +
+    // 何個できているかを見出しに出す（一覧を数えなくても分かるように）
+    '<span class="habit-count' + (doneN === totalN ? ' all' : '') + '">' + doneN + ' / ' + totalN + '</span>' +
+    '</h2>';
   profile.habits.forEach((h) => {
     const done = day.done.includes(h.id);
     const hs = computeHabitStats(h.id);
     html += '<button class="action-row' + (done ? " done" : "") + '" data-habit="' + h.id + '">' +
-      '<span class="stamp' + (done ? " pressed" : "") + '">' + (done ? "済" : "") + '</span>' +
+      // 未完了も「未」と破線の丸で明示する（空白だと「できた」と見分けづらい）
+      '<span class="stamp' + (done ? " pressed" : "") + '">' + (done ? "済" : "未") + '</span>' +
       '<span class="action-body"><span class="action-name">' + esc(h.name) + '</span>' +
       (hs.streak > 0 ? '<span class="action-streak">' + hs.streak + '日連続中</span>' : '') +
       '</span></button>';
@@ -1874,7 +1945,7 @@ function journalCardHTML() {
     '<label class="fld-label">' + q.label + '</label>' +
     '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
   ).join("");
-  return '<section class="card' + (saved ? ' card-done' : '') + '">' +
+  return '<section class="card' + (saved ? ' card-done' : '') + '" data-jr-key="' + key + '">' +
     '<h2 class="card-title">' + (isPast() ? fmtDate(dateFromKey(key)) + 'のジャーナル' : '今日のジャーナル') +
       '<span class="opt-tag">任意</span></h2>' +
     '<div class="w-line">' + weatherRowHTML("mind", "心", j.mind) + weatherRowHTML("body", "体", j.body) + '</div>' +
@@ -1887,7 +1958,7 @@ function journalCardHTML() {
       ).join("") +
       '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
     '</div>' +
-    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + ((("shareWanted" in j) ? j.shareWanted : j.posted) ? " checked" : "") + '><span>Slackに共有する</span></label>' +
     '<button class="btn-primary" id="jr-save">' + (saved ? '更新する' : '保存する') + '</button>' +
     (saved ? '<p class="note" style="text-align:center;margin-bottom:0">保存済みです。</p>' : '') +
     (fbLoading
@@ -1957,7 +2028,9 @@ function journalView() {
     '<textarea class="fld jr-field" data-q="' + q.id + '" placeholder="（任意）">' + esc(j[q.id] || "") + '</textarea>'
   ).join("");
 
-  const past = Object.keys(journals).filter((k) => k !== key).sort().reverse().slice(0, 30);
+  const past = Object.keys(journals)
+    .filter((k) => k !== key && journals[k] && journals[k].savedAt)   // 下書きは履歴に出さない
+    .sort().reverse().slice(0, 30);
   let history = "";
   if (past.length) {
     history = '<section class="card"><h2 class="card-title">これまでのジャーナル</h2>' +
@@ -1972,7 +2045,7 @@ function journalView() {
 
   return '<main class="body">' +
     '<div class="date-row"><span class="date-big">' + (d.getMonth()+1) + '月' + d.getDate() + '日</span><span class="date-wd">' + wd + '曜日</span></div>' +
-    '<section class="card"><h2 class="card-title">今日のジャーナル</h2>' +
+    '<section class="card" data-jr-key="' + key + '"><h2 class="card-title">今日のジャーナル</h2>' +
     '<p class="card-sub">書ける問いだけで大丈夫です。記録はこの端末にのみ保存され、投稿しない限り誰にも共有されません。</p>' +
     fields +
     '<label class="fld-label">今日のジャーナルの重要度</label>' +
@@ -1983,7 +2056,7 @@ function journalView() {
       ).join("") +
       '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
     '</div>' +
-    '<label class="chk"><input type="checkbox" id="jr-share"' + (j.posted ? " checked" : "") + '><span>Slackに共有する</span></label>' +
+    '<label class="chk"><input type="checkbox" id="jr-share"' + ((("shareWanted" in j) ? j.shareWanted : j.posted) ? " checked" : "") + '><span>Slackに共有する</span></label>' +
     '<button class="btn-primary" id="jr-save">保存する</button>' +
     (j.savedAt ? '<p class="note" style="text-align:center">保存済みです。</p>' : '') +
     '</section>' + history + '</main>';
@@ -2825,6 +2898,7 @@ function bindLogin() {
 
 /* ---------- render & bind ---------- */
 function render() {
+  captureJournalDraft();   // 描き直しで書きかけが消えないように、先に退避する
   const app = $("#app");
   // 同期が有効かつ未ログイン、かつ「この端末だけ」を選んでいない場合はログイン画面
   if (cloudEnabled() && !cloudReady && !localOnly) {
@@ -2908,12 +2982,20 @@ function bindApp() {
   if (js) js.onclick = saveJournal;
   const fbr = $("#fb-retry");
   if (fbr) fbr.onclick = () => runFeedback(targetKey());
+  // 入力中もこまめに下書きを残す（アプリが落ちても書きかけが消えないように）
+  document.querySelectorAll(".jr-field").forEach((el) => (el.oninput = () => {
+    clearTimeout(window.__jrDraftT);
+    window.__jrDraftT = setTimeout(captureJournalDraft, 600);
+  }));
+  const jsh = $("#jr-share");
+  if (jsh) jsh.onchange = captureJournalDraft;
   document.querySelectorAll("[data-weather]").forEach((box) => {
     box.querySelectorAll(".w-opt").forEach((b) => (b.onclick = () => {
       const v = b.dataset.w;
       const next = box.dataset.val === v ? "" : v;   // 同じものを再タップで解除
       box.dataset.val = next;
       box.querySelectorAll(".w-opt").forEach((x) => x.classList.toggle("on", x.dataset.w === next));
+      captureJournalDraft();
     }));
   });
   const starBox = $("#jr-stars");
@@ -2924,6 +3006,7 @@ function bindApp() {
         s.classList.toggle("on", Number(s.dataset.star) <= v));
       const cl = $("#jr-star-clear");
       if (cl) cl.textContent = v ? "クリア" : "";
+      captureJournalDraft();
     };
     starBox.querySelectorAll(".star").forEach((s) =>
       (s.onclick = () => paint(Number(s.dataset.star))));
