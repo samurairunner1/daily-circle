@@ -695,6 +695,7 @@ let dayOffset = 0;          // 0=今日, 1=昨日, ... 最大30
 const MAX_BACK = 30;        // さかのぼれる日数
 let toastTimer = null;
 let ringAnimated = false;
+let posting = false;        // Slackに送信中（ボタンを押せなくして二度押しを防ぐ）
 
 const MILESTONES = [7, 30, 66, 100, 200, 365];
 
@@ -791,15 +792,34 @@ function computeHabitStats(habitId) {
 }
 
 /* ---------- Slack ---------- */
+/* 同じ本文をSlackに連続で送らないための記録
+   回線が遅いと画面が変わらないため、ユーザーが何度もボタンを押してしまい
+   同じ投稿が秒単位で並んでしまう。送信「開始」時点で記録するので、
+   まだ送信中のものに対する二度押しもここで止まる。 */
+const slackLastSentAt = Object.create(null);
+const SLACK_DUP_WINDOW_MS = 60 * 1000;
+
 function sendSlack(text) {
   const urls = webhookUrls();
   if (!urls.length) return Promise.resolve(false);
+
+  const now = Date.now();
+  if (now - (slackLastSentAt[text] || 0) < SLACK_DUP_WINDOW_MS) {
+    // すでに同じ内容を送った（または送信中）。Slackには届いているので成功として扱う
+    return Promise.resolve(true);
+  }
+  slackLastSentAt[text] = now;
+
   // Incoming WebhookはCORSヘッダを返さないため no-cors で送信（結果は不透明）
   // 複数グループ所属の場合は、該当するチャンネルすべてに送る
   return Promise.all(urls.map((u) =>
     fetch(u, { method: "POST", mode: "no-cors", body: JSON.stringify({ text }) })
       .then(() => true).catch(() => false)
-  )).then((rs) => rs.every(Boolean)).catch(() => false);
+  )).then((rs) => {
+    const ok = rs.every(Boolean);
+    if (!ok) delete slackLastSentAt[text];   // 失敗したぶんは、すぐ送り直せるようにする
+    return ok;
+  }).catch(() => { delete slackLastSentAt[text]; return false; });
 }
 
 function showToast(msg) {
@@ -929,6 +949,7 @@ function toggleHabit(habitId) {
 }
 
 function postToday() {
+  if (posting) return;   // 送信中の二度押しは無視する
   const key = targetKey();
   const day = logs[key] || { done: [] };
   if (day.done.length === 0) { showToast("まずは今日の習慣にチェックを入れてください"); return; }
@@ -956,7 +977,10 @@ function postToday() {
     "\n\n" + s.streak + "日連続　　達成率 " + s.rate + "%" +
     // 節目だけは年に数回しか出ないので、ここは絵文字が効く
     (milestone ? "\n\n:tada: 祝・" + milestone + "日連続達成" : "");
+  posting = true;
+  render();   // ボタンを「送信中…」にして押せなくする
   sendSlack(msg).then((ok) => {
+    posting = false;
     if (ok) {
       day.posted = true;
       logs[key] = day;
@@ -966,6 +990,7 @@ function postToday() {
       if (milestone) showCelebration(milestone);
       showToast(isUpdate ? "Slackに再投稿しました" : "Slackに投稿しました");
     } else {
+      render();
       showToast("投稿に失敗しました。通信環境を確認してください");
     }
   });
@@ -1075,6 +1100,7 @@ function captureJournalDraft() {
 }
 
 function saveJournal() {
+  if (posting) return;   // 送信中の二度押しは無視する
   const key = targetKey();
   const entry = journals[key] || {};
   let any = false;
@@ -1110,9 +1136,12 @@ function saveJournal() {
     if (entry.mind) wParts.push(wEmoji(entry.mind) + " 心");
     if (entry.body) wParts.push(wEmoji(entry.body) + " 体");
     const wl = wParts.length ? wParts.join("　") + "\n\n" : "";
+    posting = true;
+    render();   // 保存ボタンを「送信中…」にして押せなくする
     sendSlack("*" + fmtDate(d) + "　" + profile.name + " のジャーナル*" +
       (isPast() ? "（後から記録）" : "") + st + "\n" +
       wl + body).then((ok) => {
+      posting = false;
       if (ok) { entry.posted = true; journals[key] = entry; persist(); }
       render();
       showToast(ok ? "保存してSlackに共有しました" : "保存しました（Slack共有に失敗）");
@@ -1378,11 +1407,12 @@ function habitView() {
     html += '<div class="share-row">' +
       '<p class="saved-hint"><span class="saved-dot"></span>' +
         (day.done.length ? '記録は保存されています' : 'タップするだけで記録されます') + '</p>' +
-      '<button class="btn-primary post-btn" id="post-today"' + (day.done.length ? '' : ' disabled') + '>' +
-        (day.posted
-          ? (isPast() ? 'この日の記録を再投稿する' : '今日の記録を再投稿する')
-          : (isPast() ? 'この日の記録を共有する' : '今日の記録を仲間に共有する')) +
-        '<span class="post-opt">任意</span></button>' +
+      '<button class="btn-primary post-btn" id="post-today"' + ((day.done.length && !posting) ? '' : ' disabled') + '>' +
+        (posting ? '送信中…'
+          : (day.posted
+            ? (isPast() ? 'この日の記録を再投稿する' : '今日の記録を再投稿する')
+            : (isPast() ? 'この日の記録を共有する' : '今日の記録を仲間に共有する'))) +
+        (posting ? '' : '<span class="post-opt">任意</span>') + '</button>' +
       '<p class="share-note">' + (day.posted
         ? (gl ? gl + 'に投稿済みです。チェックを変えたら、もう一度押すと更新できます。' : '投稿済みです。')
         : (day.done.length
@@ -1916,7 +1946,8 @@ function journalCardHTML() {
       '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
     '</div>' +
     '<label class="chk"><input type="checkbox" id="jr-share"' + ((("shareWanted" in j) ? j.shareWanted : j.posted) ? " checked" : "") + '><span>Slackに共有する</span></label>' +
-    '<button class="btn-primary" id="jr-save">' + (saved ? '更新する' : '保存する') + '</button>' +
+    '<button class="btn-primary" id="jr-save"' + (posting ? ' disabled' : '') + '>' +
+      (posting ? '送信中…' : (saved ? '更新する' : '保存する')) + '</button>' +
     (saved ? '<p class="note" style="text-align:center;margin-bottom:0">保存済みです。</p>' : '') +
     (fbLoading
       ? '<div class="fb fb-wait"><span class="fb-dots"><i></i><i></i><i></i></span>今日の記録を読んでいます…</div>'
@@ -2014,7 +2045,8 @@ function journalView() {
       '<span class="star-clear" id="jr-star-clear">' + (j.stars ? 'クリア' : '') + '</span>' +
     '</div>' +
     '<label class="chk"><input type="checkbox" id="jr-share"' + ((("shareWanted" in j) ? j.shareWanted : j.posted) ? " checked" : "") + '><span>Slackに共有する</span></label>' +
-    '<button class="btn-primary" id="jr-save">保存する</button>' +
+    '<button class="btn-primary" id="jr-save"' + (posting ? ' disabled' : '') + '>' +
+      (posting ? '送信中…' : '保存する') + '</button>' +
     (j.savedAt ? '<p class="note" style="text-align:center">保存済みです。</p>' : '') +
     '</section>' + history + '</main>';
 }
