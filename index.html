@@ -73,6 +73,9 @@ body{
 .card.danger::before{background:#4A4E58}
 .card-title{font-family:'Shippori Mincho B1',serif;font-weight:700;font-size:16.5px;letter-spacing:.08em;margin-bottom:8px}
 .card-sub{font-size:12.5px;color:#4A4E58;margin-bottom:12px;line-height:1.9}
+.st-range-row{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.st-range-row .fld{margin-bottom:0;flex:1;min-width:0}
+.st-range-sep{color:#4A4E58;font-size:13px;flex-shrink:0}
 
 /* habits */
 /* 完了／未完了が一目で分かるよう、丸だけでなく行ごと塗り分ける */
@@ -970,7 +973,7 @@ function postToday() {
   const milestone = (MILESTONES.includes(s.streak) && !celebrated.includes(s.streak)) ? s.streak : null;
   const dd = dateFromKey(key);
   const nDone = day.done.filter((id) => profile.habits.some((h) => h.id === id)).length;
-  const msg = "*" + fmtDate(dd) + "　" + profile.name + "*　" + nDone + "/" + profile.habits.length +
+  const msg = slackHead(fmtDate(dd)) + "　" + nDone + "/" + profile.habits.length +
     (isPast() ? "（後から記録）" : "") + (isUpdate ? "（更新）" : "") + "\n" +
     lines +
     // 毎日出る数字に絵文字を付けると、毎日やかましいだけで情報が増えない
@@ -1138,7 +1141,7 @@ function saveJournal() {
     const wl = wParts.length ? wParts.join("　") + "\n\n" : "";
     posting = true;
     render();   // 保存ボタンを「送信中…」にして押せなくする
-    sendSlack("*" + fmtDate(d) + "　" + profile.name + " のジャーナル*" +
+    sendSlack(slackHead(fmtDate(d), "のジャーナル", "ジャーナル") +
       (isPast() ? "（後から記録）" : "") + st + "\n" +
       wl + body).then((ok) => {
       posting = false;
@@ -1229,7 +1232,7 @@ function tavComplete(id) {
       t.shared = !!share;
       persist(); render();
       if (share && webhookUrl()) {
-        sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+        sendSlack(slackHead(fmtDate(appNow()), "がTAVを実行", "TAVを実行") + "\n" +
           "◉ " + t.title + "\n\n_やってみて_\n" + v).then((ok) =>
           showToast(ok ? "完了しました。Slackに共有しました" : "完了しました（Slack共有に失敗）"));
       } else showToast("完了しました");
@@ -1240,7 +1243,7 @@ function tavComplete(id) {
 function tavShare(id) {
   const t = findTav(id);
   if (!t || !webhookUrl()) return;
-  sendSlack("*" + fmtDate(appNow()) + "　" + profile.name + " がTAVを実行*\n" +
+  sendSlack(slackHead(fmtDate(appNow()), "がTAVを実行", "TAVを実行") + "\n" +
     "◉ " + t.title + "\n\n_やってみて_\n" + t.review).then((ok) => {
     if (ok) { t.shared = true; persist(); render(); }
     showToast(ok ? "Slackに共有しました" : "共有に失敗しました");
@@ -2476,6 +2479,17 @@ function settingsView() {
     '<input type="file" id="st-file" accept="application/json,.json" style="display:none">' +
     '</section>' +
 
+    // 期間を切り出してJSONで渡せるようにする（AIに読ませて振り返るため）
+    '<section class="card"><h2 class="card-title">期間を指定して取り出す</h2>' +
+    '<p class="card-sub">選んだ期間の記録だけをJSONで書き出します。問いの文面や習慣の名前も一緒に入るので、そのままAIに読ませて振り返りに使えます。</p>' +
+    '<div class="st-range-row">' +
+      '<input type="date" class="fld" id="st-from" value="' + monthStartKey() + '">' +
+      '<span class="st-range-sep">〜</span>' +
+      '<input type="date" class="fld" id="st-to" value="' + todayKey() + '">' +
+    '</div>' +
+    '<button class="btn-ghost" id="st-export-range" style="margin-bottom:0">この期間を書き出す</button>' +
+    '</section>' +
+
     '<section class="card danger"><h2 class="card-title">記録帳をリセット</h2>' +
     '<p class="card-sub">目標・習慣・毎日の記録・ジャーナル・TAVがすべて消えます。元に戻せません。</p>' +
     '<button class="btn-ghost" id="st-reset">リセットする…</button>' +
@@ -2617,15 +2631,22 @@ function mergeAll(cloud) {
 }
 
 let fetchedGroup = null;    // 名簿から取得したグループ（profile未作成でも保持）
+let fetchedSlackId = null;  // 名簿から取得したSlackのメンバーID（投稿でメンションするため）
 
 async function fetchGroup() {
   if (!signedIn()) return;
   try {
     const email = (session.user.email || "").toLowerCase();
-    const { data, error } = await sb.from("member_groups")
-      .select("grp").eq("email", email).maybeSingle();
-    if (error) { console.error("group", error); return; }
+    let { data, error } = await sb.from("member_groups")
+      .select("grp, slack_id").eq("email", email).maybeSingle();
+    if (error) {
+      // slack_id 列をまだ追加していないSupabaseでも、グループ取得だけは動かす
+      const r = await sb.from("member_groups").select("grp").eq("email", email).maybeSingle();
+      if (r.error) { console.error("group", r.error); return; }
+      data = r.data;
+    }
     fetchedGroup = data && data.grp ? data.grp : "";
+    fetchedSlackId = data && data.slack_id ? data.slack_id : "";
     applyFetchedGroup();
   } catch (e) { console.error("fetchGroup", e); }
 }
@@ -2633,12 +2654,25 @@ async function fetchGroup() {
 // オンボーディング完了後など、profileができた時点でも反映できるように
 function applyFetchedGroup() {
   if (fetchedGroup === null || !profile) return false;
-  if (profile.group !== fetchedGroup) {
-    profile.group = fetchedGroup;
-    persistLocal();
-    return true;
+  let changed = false;
+  if (profile.group !== fetchedGroup) { profile.group = fetchedGroup; changed = true; }
+  if (fetchedSlackId !== null && (profile.slackId || "") !== fetchedSlackId) {
+    profile.slackId = fetchedSlackId; changed = true;
   }
-  return false;
+  if (changed) persistLocal();
+  return changed;
+}
+
+/* Slack投稿の見出し。
+   SlackのメンバーIDが分かっていれば <@ID> でメンションする。
+   Webhookのbotが投稿者になるため、メンションが無いと
+   自分の投稿にスレッド返信が付いても本人に通知が飛ばない。
+   元の投稿でメンションされていれば、以降の返信も通知される。
+   IDが未登録の人は、これまでどおり名前だけを出す。 */
+function slackHead(dateLabel, tailWithName, tailAlone) {
+  const id = (profile && profile.slackId) || "";
+  if (id) return "<@" + id + ">　*" + dateLabel + (tailAlone ? "　" + tailAlone : "") + "*";
+  return "*" + dateLabel + "　" + profile.name + (tailWithName ? " " + tailWithName : "") + "*";
 }
 
 async function pullAndMerge() {
@@ -2743,6 +2777,56 @@ function collectSettings(validate) {
 }
 
 /* ---------- backup ---------- */
+/* 今月の1日。期間指定の初期値に使う */
+function monthStartKey() {
+  const d = appNow();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01";
+}
+
+/* 期間を指定して、その範囲の記録だけをJSONで書き出す。
+   q1/q2/q3 や sun/cloud のままだと受け取った側が解釈できないので、
+   問いの文面と天気のラベルも一緒に入れておく。 */
+function exportRange() {
+  const from = ($("#st-from") || {}).value || "";
+  const to = ($("#st-to") || {}).value || "";
+  if (!from || !to) { showToast("開始日と終了日を選んでください"); return; }
+  if (from > to) { showToast("開始日が終了日より後になっています"); return; }
+
+  const inRange = (k) => !!k && k >= from && k <= to;   // キーは YYYY-MM-DD なので文字列比較でよい
+  const pick = (obj) => {
+    const out = {};
+    Object.keys(obj || {}).forEach((k) => { if (inRange(k)) out[k] = obj[k]; });
+    return out;
+  };
+  const rLogs = pick(logs);
+  const rJournals = pick(journals);
+  const rTavs = (tavs || []).filter((t) =>
+    inRange(t.createdAt) || inRange(t.completedAt) || inRange(t.touchedAt) || inRange(t.due));
+
+  const payload = {
+    app: "daily-circle", version: 1, kind: "range",
+    from, to, exportedAt: new Date().toISOString(),
+    profile: {
+      name: (profile && profile.name) || "",
+      goals: (profile && profile.goals) || [],
+      habits: (profile && profile.habits) || [],
+    },
+    questions: JOURNAL_QUESTIONS.map((q) => ({ id: q.id, label: q.label })),
+    weather: WEATHER.map((w) => ({ id: w.id, label: w.label })),
+    logs: rLogs, journals: rJournals, tavs: rTavs,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "daily-circle-" + from + "_" + to + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+
+  const n = Object.keys(rLogs).length, j = Object.keys(rJournals).length;
+  showToast("習慣" + n + "日・ジャーナル" + j + "件・TAV" + rTavs.length + "件を書き出しました");
+}
+
 function exportData() {
   const payload = {
     app: "daily-circle", version: 1, exportedAt: new Date().toISOString(),
@@ -3125,6 +3209,8 @@ function bindApp() {
     render();
   };
 
+  const expr = $("#st-export-range");
+  if (expr) expr.onclick = exportRange;
   const exp = $("#st-export");
   if (exp) exp.onclick = exportData;
   const imp = $("#st-import"), file = $("#st-file");
