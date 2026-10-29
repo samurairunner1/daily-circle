@@ -718,6 +718,9 @@ let tab = "habit";
 let menuOpen = false;
 let overlay = null;   // "review" | "settings" | null
 let tavFilter = "active";
+// 書きかけのTAV。描き直しやアプリ終了で消えないよう、端末内に控えておく
+// （クラウドには送らない。保存前の下書きなので、他の端末に出す必要がない）
+let tavDraft = load("demo_tav_draft") || {};
 let tavOpen = {};          // 展開中のTAV
 let tavQuery = "";         // 検索語
 let tavBulk = false;       // まとめて追加モード
@@ -1136,6 +1139,28 @@ function captureJournalDraft() {
   persistLocal();
 }
 
+/* 画面を描き直す前に、書きかけのTAVを退避する。
+   ジャーナルと同じ理由：入力欄はDOMにしか無いので、render() で作り直されると消える。 */
+function captureTavDraft() {
+  const t = $("#tav-title"), m = $("#tav-memo"), b = $("#tav-bulk"), sh = $("#tav-share");
+  if (!t && !b) return;   // TAVタブを開いていない
+  const d = {
+    title: t ? t.value : (tavDraft.title || ""),
+    memo:  m ? m.value : (tavDraft.memo || ""),
+    bulk:  b ? b.value : (tavDraft.bulk || ""),
+    share: sh ? !!sh.checked : !!tavDraft.share,
+  };
+  if (!d.title && !d.memo && !d.bulk && !d.share) { clearTavDraft(); return; }
+  if (JSON.stringify(d) === JSON.stringify(tavDraft)) return;
+  tavDraft = d;
+  try { localStorage.setItem("demo_tav_draft", JSON.stringify(d)); } catch (e) {}
+}
+
+function clearTavDraft() {
+  tavDraft = {};
+  try { localStorage.removeItem("demo_tav_draft"); } catch (e) {}
+}
+
 function saveJournal() {
   if (posting) return;   // 送信中の二度押しは無視する
   const key = targetKey();
@@ -1201,6 +1226,11 @@ function addTav() {
   const share = $("#tav-share") && $("#tav-share").checked;
   const t = { id: uid(), title, memo: $("#tav-memo").value.trim(), decision: null, due: "", review: "", createdAt: todayKey() };
   tavs.unshift(t);
+  // 先に入力欄を空にしておく。render() は描き直す前に下書きを拾うので、
+  // 残したままだと「追加したのに下書きが復活する」ことになる
+  ["#tav-title", "#tav-memo"].forEach((sel) => { const el = $(sel); if (el) el.value = ""; });
+  const shBox = $("#tav-share"); if (shBox) shBox.checked = false;
+  clearTavDraft();
   persist();
   tavFilter = "active";
   render();
@@ -1225,6 +1255,8 @@ function addTavBulk() {
   lines.reverse().forEach((title) => {
     tavs.unshift({ id: uid(), title, memo: "", decision: null, due: "", review: "", createdAt: now });
   });
+  if (ta) ta.value = "";   // 上と同じ理由で、描き直す前に空にする
+  clearTavDraft();
   persist();
   tavBulk = false; tavFilter = "active";
   render();
@@ -2214,14 +2246,14 @@ function tavView() {
   // ---- 追加フォーム ----
   const addForm = tavBulk
     ? '<p class="card-sub">1行に1つずつ書いてください。月例会のメモをそのまま貼り付けられます。</p>' +
-      '<textarea class="fld bulk-ta" id="tav-bulk" placeholder="面談ではまず相手の原体験を聞く\n週次の数字を月曜の朝に確認する\n任せたら口を出さない"></textarea>' +
+      '<textarea class="fld bulk-ta" id="tav-bulk" placeholder="面談ではまず相手の原体験を聞く\n週次の数字を月曜の朝に確認する\n任せたら口を出さない">' + esc(tavDraft.bulk || "") + '</textarea>' +
       '<button class="btn-primary" id="tav-bulk-add">まとめて追加する</button>' +
       '<button class="btn-ghost" id="tav-mode-one" style="margin-bottom:0">1件ずつ入力に戻す</button>'
     : '<p class="card-sub">Takeaway Value — 人の話や日々の中で得た「これは真似したい」を、実行まで運ぶための場所です。</p>' +
-      '<input class="fld" id="tav-title" placeholder="例：面談ではまず相手の原体験を聞く">' +
-      '<textarea class="fld" id="tav-memo" placeholder="補足メモ（任意）"></textarea>' +
+      '<input class="fld" id="tav-title" placeholder="例：面談ではまず相手の原体験を聞く" value="' + esc(tavDraft.title || "") + '">' +
+      '<textarea class="fld" id="tav-memo" placeholder="補足メモ（任意）">' + esc(tavDraft.memo || "") + '</textarea>' +
       (webhookUrl()
-        ? '<label class="chk"><input type="checkbox" id="tav-share"><span>Slackに共有する</span></label>'
+        ? '<label class="chk"><input type="checkbox" id="tav-share"' + (tavDraft.share ? " checked" : "") + '><span>Slackに共有する</span></label>'
         : '') +
       '<button class="btn-primary" id="tav-add">気づきを追加する</button>' +
       '<button class="btn-ghost" id="tav-mode-bulk" style="margin-bottom:0">まとめて追加する</button>';
@@ -3018,6 +3050,7 @@ function bindLogin() {
 /* ---------- render & bind ---------- */
 function render() {
   captureJournalDraft();   // 描き直しで書きかけが消えないように、先に退避する
+  captureTavDraft();
   const app = $("#app");
   // 同期が有効かつ未ログイン、かつ「この端末だけ」を選んでいない場合はログイン画面
   if (cloudEnabled() && !cloudReady && !localOnly) {
@@ -3136,6 +3169,16 @@ function bindApp() {
   // TAV
   const ta = $("#tav-add");
   if (ta) ta.onclick = addTav;
+  // 入力中もこまめに控える（アプリが落ちても書きかけが残るように）
+  ["#tav-title", "#tav-memo", "#tav-bulk"].forEach((sel) => {
+    const el = $(sel);
+    if (el) el.oninput = () => {
+      clearTimeout(window.__tavDraftT);
+      window.__tavDraftT = setTimeout(captureTavDraft, 600);
+    };
+  });
+  const tsh = $("#tav-share");
+  if (tsh) tsh.onchange = captureTavDraft;
   const tb = $("#tav-bulk-add");
   if (tb) tb.onclick = addTavBulk;
   const tModeB = $("#tav-mode-bulk");
@@ -3292,7 +3335,7 @@ function bindApp() {
   const reset = $("#st-reset");
   if (reset) reset.onclick = () => {
     if (reset.dataset.armed) {
-      ["demo_profile","demo_logs","demo_journals","demo_tavs"].forEach((k) => localStorage.removeItem(k));
+      ["demo_profile","demo_logs","demo_journals","demo_tavs","demo_tav_draft"].forEach((k) => localStorage.removeItem(k));
       profile = null; logs = {}; journals = {}; tavs = []; tab = "habit"; overlay = null;
       render();
     } else {
