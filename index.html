@@ -1164,11 +1164,20 @@ function saveJournal() {
 function addTav() {
   const title = $("#tav-title").value.trim();
   if (!title) { showToast("気づきを入力してください"); return; }
-  tavs.unshift({ id: uid(), title, memo: $("#tav-memo").value.trim(), decision: null, due: "", review: "", createdAt: todayKey() });
+  const share = $("#tav-share") && $("#tav-share").checked;
+  const t = { id: uid(), title, memo: $("#tav-memo").value.trim(), decision: null, due: "", review: "", createdAt: todayKey() };
+  tavs.unshift(t);
   persist();
   tavFilter = "active";
   render();
-  showToast("気づきを追加しました");
+  // 気づいた時点でも仲間に流せるようにする（実行を待たずに刺激が回る）
+  if (share && webhookUrl()) {
+    t.sharedInsight = true;
+    persist();
+    sendSlack(slackHead(fmtDate(appNow()), "が追加したTAV", "追加したTAV") + "\n" +
+      "◉ " + t.title + (t.memo ? "\n\n" + t.memo : "")).then((ok) =>
+      showToast(ok ? "追加してSlackに共有しました" : "追加しました（Slack共有に失敗）"));
+  } else showToast("気づきを追加しました");
 }
 
 function addTavBulk() {
@@ -1232,7 +1241,7 @@ function tavComplete(id) {
       t.shared = !!share;
       persist(); render();
       if (share && webhookUrl()) {
-        sendSlack(slackHead(fmtDate(appNow()), "がTAVを実行", "TAVを実行") + "\n" +
+        sendSlack(slackHead(fmtDate(appNow()), "が実行したTAV", "実行したTAV") + "\n" +
           "◉ " + t.title + "\n\n_やってみて_\n" + v).then((ok) =>
           showToast(ok ? "完了しました。Slackに共有しました" : "完了しました（Slack共有に失敗）"));
       } else showToast("完了しました");
@@ -1243,7 +1252,7 @@ function tavComplete(id) {
 function tavShare(id) {
   const t = findTav(id);
   if (!t || !webhookUrl()) return;
-  sendSlack(slackHead(fmtDate(appNow()), "がTAVを実行", "TAVを実行") + "\n" +
+  sendSlack(slackHead(fmtDate(appNow()), "が実行したTAV", "実行したTAV") + "\n" +
     "◉ " + t.title + "\n\n_やってみて_\n" + t.review).then((ok) => {
     if (ok) { t.shared = true; persist(); render(); }
     showToast(ok ? "Slackに共有しました" : "共有に失敗しました");
@@ -2177,6 +2186,9 @@ function tavView() {
     : '<p class="card-sub">Takeaway Value — 人の話や日々の中で得た「これは真似したい」を、実行まで運ぶための場所です。</p>' +
       '<input class="fld" id="tav-title" placeholder="例：面談ではまず相手の原体験を聞く">' +
       '<textarea class="fld" id="tav-memo" placeholder="補足メモ（任意）"></textarea>' +
+      (webhookUrl()
+        ? '<label class="chk"><input type="checkbox" id="tav-share"><span>Slackに共有する</span></label>'
+        : '') +
       '<button class="btn-primary" id="tav-add">気づきを追加する</button>' +
       '<button class="btn-ghost" id="tav-mode-bulk" style="margin-bottom:0">まとめて追加する</button>';
 
